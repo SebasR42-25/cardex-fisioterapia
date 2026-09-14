@@ -1,0 +1,947 @@
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { API_URL } from '../config';
+
+export default function DoctorView() {
+  // Pestaña activa: 'expediente', 'evolucion', 'dashboard', 'catalogo'
+  const [pestañaActiva, setPestañaActiva] = useState('expediente');
+
+  // Estados de Pacientes
+  const [pacientesLista, setPacientesLista] = useState([]);
+  const [idBuscado, setIdBuscado] = useState("1");
+  const [pacienteIdActivo, setPacienteIdActivo] = useState("1");
+  const [paciente, setPaciente] = useState(null);
+  const [rutinasHoy, setRutinasHoy] = useState([]);
+  const [cardex, setCardex] = useState([]);
+  const [feedbackPaciente, setFeedbackPaciente] = useState([]);
+  const [mostrarQrModal, setMostrarQrModal] = useState(false);
+
+  // Estados Catálogo de Ejercicios
+  const ejerciciosCatalogoBase = [
+    { id: 1, titulo: "Extensión de Rodilla", descripcion: "Ideal para fortalecer cuádriceps y recuperar movilidad articular tras cirugías o desgaste leve.", frecuenciaSugerida: "3 series de 10 repeticiones", url_video: "/videos/rodilla.mp4", zona_cuerpo: "Pierna" },
+    { id: 2, titulo: "Caminata Estática", descripcion: "Excelente para mejorar la resistencia cardiovascular de bajo impacto y activar la circulación en piernas.", frecuenciaSugerida: "5 minutos continuos", url_video: "/videos/caminata.mp4", zona_cuerpo: "General" }
+  ];
+  const [ejerciciosCatalogo, setEjerciciosCatalogo] = useState(ejerciciosCatalogoBase);
+  const [selectedEjercicioId, setSelectedEjercicioId] = useState(1);
+  const [frecuenciaAsignar, setFrecuenciaAsignar] = useState("3 series de 10 repeticiones");
+
+  // Estados Formulario Cardex y Evolución
+  const [nivelDolor, setNivelDolor] = useState(2);
+  const [rangoMovilidad, setRangoMovilidad] = useState("Completo/Fluido");
+  const [estadoBanner, setEstadoBanner] = useState("Estable 🟢");
+  const [observaciones, setObservaciones] = useState("");
+  const [filtroHistorial, setFiltroHistorial] = useState("");
+
+  // Estados Formulario de Registro de Nuevo Paciente
+  const [mostrarFormCrear, setMostrarFormCrear] = useState(false);
+  const [nuevoNombre, setNuevoNombre] = useState("");
+  const [nuevoEmail, setNuevoEmail] = useState("");
+  const [nuevoPassword, setNuevoPassword] = useState("123456");
+
+  // Estados Formulario Nuevo Video Interactivo
+  const [nuevoVideoTitulo, setNuevoVideoTitulo] = useState("");
+  const [nuevoVideoZona, setNuevoVideoZona] = useState("Pierna");
+  const [nuevoVideoDesc, setNuevoVideoDesc] = useState("");
+  const [nuevoVideoUrl, setNuevoVideoUrl] = useState("/videos/rodilla.mp4");
+
+  // Estados Dashboard de Estadísticas
+  const [dashboardData, setDashboardData] = useState({
+    total_pacientes: 0,
+    total_rutinas: 0,
+    completadas: 0,
+    pendientes: 0,
+    tasa_adherencia: 0,
+    pacientes: []
+  });
+
+  // Cargar lista de pacientes y catálogo
+  const cargarPacientes = () => {
+    fetch(`${API_URL}/pacientes`)
+      .then(res => res.ok ? res.json() : [])
+      .then(data => setPacientesLista(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  };
+
+  const cargarEjercicios = () => {
+    fetch(`${API_URL}/ejercicios-disponibles`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          const formateados = data.map(item => ({
+            id: item.id,
+            titulo: item.titulo,
+            descripcion: item.descripcion,
+            frecuenciaSugerida: item.frecuenciaSugerida || (item.id === 1 ? "3 series de 10 repeticiones" : "5 minutos continuos"),
+            url_video: item.url_video || "/videos/rodilla.mp4",
+            zona_cuerpo: item.zona_cuerpo || "General"
+          }));
+          setEjerciciosCatalogo(formateados);
+        }
+      })
+      .catch(() => {});
+  };
+
+  const cargarDashboard = () => {
+    fetch(`${API_URL}/dashboard/estadisticas`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) setDashboardData(data);
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    cargarPacientes();
+    cargarEjercicios();
+    cargarDashboard();
+  }, []);
+
+  // Cargar datos específicos del paciente activo
+  useEffect(() => {
+    if (!pacienteIdActivo) return;
+
+    fetch(`${API_URL}/pacientes/${pacienteIdActivo}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => setPaciente(data))
+      .catch(() => setPaciente(null));
+
+    fetch(`${API_URL}/pacientes/${pacienteIdActivo}/rutinas`)
+      .then(res => res.ok ? res.json() : [])
+      .then(data => setRutinasHoy(Array.isArray(data) ? data : []))
+      .catch(() => setRutinasHoy([]));
+
+    fetch(`${API_URL}/pacientes/${pacienteIdActivo}/cardex`)
+      .then(res => res.ok ? res.json() : [])
+      .then(data => setCardex(Array.isArray(data) ? data : []))
+      .catch(() => setCardex([]));
+
+    fetch(`${API_URL}/pacientes/${pacienteIdActivo}/feedback`)
+      .then(res => res.ok ? res.json() : [])
+      .then(data => setFeedbackPaciente(Array.isArray(data) ? data : []))
+      .catch(() => setFeedbackPaciente([]));
+  }, [pacienteIdActivo]);
+
+  // Manejo de búsqueda y selección de paciente
+  const buscarPacientePorId = (e) => {
+    e.preventDefault();
+    if (idBuscado) {
+      setPacienteIdActivo(idBuscado.toString());
+    }
+  };
+
+  const seleccionarPacienteDirecto = (id) => {
+    setIdBuscado(id.toString());
+    setPacienteIdActivo(id.toString());
+  };
+
+  // Manejo de selección en catálogo de ejercicios
+  const handleEjercicioSelect = (e) => {
+    const id = Number(e.target.value);
+    setSelectedEjercicioId(id);
+    const ej = ejerciciosCatalogo.find(item => item.id === id);
+    if (ej) {
+      setFrecuenciaAsignar(ej.frecuenciaSugerida || "3 series de 10 repeticiones");
+    }
+  };
+
+  const ejercicioSeleccionado = ejerciciosCatalogo.find(ex => ex.id === Number(selectedEjercicioId)) || ejerciciosCatalogo[0];
+
+  // 1. REGISTRAR EVOLUCIÓN
+  const guardarEvolucionCompleta = async (e) => {
+    e.preventDefault();
+    const notaFormateada = `[Estado: ${estadoBanner}] [Dolor: ${nivelDolor}/10] [Movilidad: ${rangoMovilidad}] - ${observaciones}`;
+
+    const res = await fetch(`${API_URL}/pacientes/${pacienteIdActivo}/cardex`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ doctor_id: 1, notas_clinicas: notaFormateada })
+    });
+
+    if (res.ok) {
+      alert("✅ ¡Evolución registrada y sincronizada con el expediente del paciente!");
+      setObservaciones("");
+      const updatedCardex = await fetch(`${API_URL}/pacientes/${pacienteIdActivo}/cardex`).then(r => r.json());
+      setCardex(Array.isArray(updatedCardex) ? updatedCardex : []);
+    } else {
+      alert("Error al guardar la evolución. Verifica la conexión.");
+    }
+  };
+
+  // 3. ASIGNAR EJERCICIO
+  const asignarEjercicioDirecto = async (ejercicio, frecuencia) => {
+    if (!ejercicio) return;
+    const res = await fetch(`${API_URL}/pacientes/${pacienteIdActivo}/asignar-rutina`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ejercicio_id: ejercicio.id,
+        frecuencia: frecuencia || ejercicio.frecuenciaSugerida || "3 series de 10 repeticiones"
+      })
+    });
+
+    if (res.ok) {
+      alert(`🎉 ¡"${ejercicio.titulo}" asignado al paciente #${pacienteIdActivo} con éxito!`);
+      const updated = await fetch(`${API_URL}/pacientes/${pacienteIdActivo}/rutinas`).then(r => r.json());
+      setRutinasHoy(Array.isArray(updated) ? updated : []);
+      cargarDashboard();
+    } else {
+      alert("Error al asignar la rutina.");
+    }
+  };
+
+  // 4. REGISTRAR NUEVO PACIENTE
+  const registrarPacienteBase = async (e) => {
+    e.preventDefault();
+    const res = await fetch(`${API_URL}/pacientes/registrar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre: nuevoNombre, email: nuevoEmail, password: nuevoPassword })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      alert(`🎉 ¡Paciente creado con éxito! Expediente #${data.id}`);
+      setIdBuscado(data.id.toString());
+      setPacienteIdActivo(data.id.toString());
+      setNuevoNombre("");
+      setNuevoEmail("");
+      setMostrarFormCrear(false);
+      cargarPacientes();
+      cargarDashboard();
+    } else {
+      alert("Error al registrar paciente. Es posible que el correo ya esté registrado.");
+    }
+  };
+
+  // 5. AÑADIR NUEVO VIDEO/EJERCICIO AL CATÁLOGO
+  const registrarNuevoEjercicioCatalogo = async (e) => {
+    e.preventDefault();
+    const res = await fetch(`${API_URL}/ejercicios`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        titulo: nuevoVideoTitulo,
+        descripcion: nuevoVideoDesc,
+        url_video: nuevoVideoUrl,
+        zona_cuerpo: nuevoVideoZona
+      })
+    });
+
+    if (res.ok) {
+      alert(`🎉 ¡Video "${nuevoVideoTitulo}" añadido al catálogo médico con éxito!`);
+      setNuevoVideoTitulo("");
+      setNuevoVideoDesc("");
+      cargarEjercicios();
+      setPestañaActiva('expediente');
+    } else {
+      alert("Error al registrar el nuevo ejercicio en la base de datos.");
+    }
+  };
+
+  // Filtro de historial Cardex
+  const cardexFiltrado = cardex.filter(item =>
+    item.notas_clinicas.toLowerCase().includes(filtroHistorial.toLowerCase()) ||
+    (item.fecha && item.fecha.toLowerCase().includes(filtroHistorial.toLowerCase()))
+  );
+
+  return (
+    <div className="min-h-screen w-full bg-slate-950 text-slate-100 font-sans p-4 sm:p-6 md:p-10">
+
+      {/* Header Principal */}
+      <header className="mb-8 border-b border-slate-800 pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">🩺</span>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-blue-400 tracking-tight">Portal Clínico del Médico</h1>
+          </div>
+          <p className="text-slate-400 mt-1 text-sm md:text-base">
+            Control integral de expedientes, asignación interactiva, historial Cardex y dashboard de cumplimiento.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            to="/"
+            className="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-semibold text-xs px-4 py-3 rounded-2xl transition flex items-center gap-1.5"
+          >
+            <span>←</span> Volver al Inicio
+          </Link>
+          <button
+            onClick={() => setMostrarFormCrear(!mostrarFormCrear)}
+            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-5 py-3 rounded-2xl transition shadow-lg cursor-pointer flex items-center gap-2 text-xs sm:text-sm"
+          >
+            {mostrarFormCrear ? '✕ Cerrar Registro' : '＋ Registrar Paciente Nuevo'}
+          </button>
+        </div>
+      </header>
+
+      {/* 4. FORMULARIO REGISTRAR NUEVO PACIENTE (Colapsable) */}
+      {mostrarFormCrear && (
+        <form onSubmit={registrarPacienteBase} className="bg-slate-900 border border-emerald-500/50 p-6 sm:p-8 rounded-3xl shadow-2xl mb-8 space-y-4 animate-in fade-in">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-bold text-emerald-400 flex items-center gap-2">
+              📝 Formulario Base de Registro de Paciente
+            </h3>
+            <span className="text-xs bg-emerald-950 text-emerald-300 border border-emerald-800 px-3 py-1 rounded-full font-bold">
+              Base de Datos SQL
+            </span>
+          </div>
+          <p className="text-sm text-slate-400">Ingresa los datos del paciente para generar su expediente y credenciales de acceso automático.</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs text-slate-300 mb-1 font-bold">NOMBRE COMPLETO:</label>
+              <input
+                type="text"
+                value={nuevoNombre}
+                onChange={(e) => setNuevoNombre(e.target.value)}
+                placeholder="Ej. Roberto Gómez"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-emerald-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-300 mb-1 font-bold">CORREO ELECTRÓNICO:</label>
+              <input
+                type="email"
+                value={nuevoEmail}
+                onChange={(e) => setNuevoEmail(e.target.value)}
+                placeholder="roberto@correo.com"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-emerald-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-300 mb-1 font-bold">CONTRASEÑA INICIAL:</label>
+              <input
+                type="text"
+                value={nuevoPassword}
+                onChange={(e) => setNuevoPassword(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-emerald-500"
+                required
+              />
+            </div>
+          </div>
+
+          <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 font-extrabold py-3.5 rounded-xl transition shadow-lg cursor-pointer text-sm">
+            Guardar Paciente y Crear Expediente
+          </button>
+        </form>
+      )}
+
+      {/* 2. FILTRAR PACIENTE Y BARRA DE GESTIÓN RÁPIDA */}
+      <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl mb-8 space-y-4">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
+            {/* Buscador ID */}
+            <form onSubmit={buscarPacientePorId} className="flex items-center gap-2">
+              <div>
+                <label className="block text-[11px] text-slate-400 mb-1 font-bold">FILTRAR POR ID:</label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={idBuscado}
+                    onChange={(e) => setIdBuscado(e.target.value)}
+                    className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white w-28 focus:outline-none focus:border-blue-500 font-bold text-center text-base"
+                  />
+                  <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl font-bold transition cursor-pointer text-sm">
+                    Buscar
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            {/* Selector desplegable de todos los pacientes */}
+            {pacientesLista.length > 0 && (
+              <div className="flex-1 min-w-[200px]">
+                <label className="block text-[11px] text-slate-400 mb-1 font-bold">LISTA DE PACIENTES ({pacientesLista.length}):</label>
+                <select
+                  value={pacienteIdActivo}
+                  onChange={(e) => seleccionarPacienteDirecto(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white font-semibold text-sm cursor-pointer focus:outline-none focus:border-blue-500"
+                >
+                  {pacientesLista.map(p => (
+                    <option key={p.id} value={p.id}>
+                      ID #{p.id} - {p.nombre} ({p.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Ficha Resumen del Paciente Activo */}
+          <div className="bg-slate-800/80 border border-slate-700/80 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4 w-full lg:w-auto">
+            <div>
+              <span className="text-[11px] text-slate-400 font-bold block uppercase tracking-wider">Paciente en Gestión Activa:</span>
+              <span className="text-lg font-extrabold text-emerald-400 block">
+                {paciente ? `${paciente.nombre} (ID: ${paciente.id})` : "⚠️ Paciente no encontrado"}
+              </span>
+              {paciente && <span className="text-xs text-slate-400">{paciente.email}</span>}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setMostrarQrModal(true)}
+                className="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-3 py-2 rounded-xl border border-slate-600 transition cursor-pointer flex items-center gap-1.5"
+                title="Ver código QR de acceso para el paciente"
+              >
+                📱 Ver QR
+              </button>
+              <a
+                href={`/paciente/${pacienteIdActivo}`}
+                target="_blank"
+                rel="noreferrer"
+                className="bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 text-xs font-bold px-3 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5"
+              >
+                ↗ Abrir Vista Paciente
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal de Código QR */}
+      {mostrarQrModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-700 p-6 rounded-3xl max-w-sm w-full space-y-4 text-center">
+            <h3 className="text-lg font-bold text-white">📱 Código QR del Paciente</h3>
+            <p className="text-xs text-slate-400">Escanea este código con la cámara del celular para abrir el portal de ejercicios del paciente #{pacienteIdActivo}:</p>
+            <div className="bg-white p-4 rounded-2xl flex justify-center shadow-inner">
+              <img
+                src={`${API_URL}/pacientes/${pacienteIdActivo}/qr?base_url=${encodeURIComponent(window.location.origin)}`}
+                alt="QR Paciente"
+                className="w-48 h-48 object-contain"
+              />
+            </div>
+            <button
+              onClick={() => setMostrarQrModal(false)}
+              className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-sm transition cursor-pointer"
+            >
+              Cerrar Ventana
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Barra de Pestañas de las 7 Funcionalidades */}
+      <nav className="flex flex-wrap gap-2 mb-8 bg-slate-900/90 border border-slate-800 p-2 rounded-2xl">
+        <button
+          onClick={() => setPestañaActiva('expediente')}
+          className={`flex-1 min-w-[140px] py-3 px-4 rounded-xl font-extrabold text-sm transition cursor-pointer flex items-center justify-center gap-2 ${
+            pestañaActiva === 'expediente'
+              ? 'bg-blue-600 text-white shadow-lg'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800'
+          }`}
+        >
+          <span>🏋️</span> Asignar Ejercicios & Progreso
+        </button>
+
+        <button
+          onClick={() => setPestañaActiva('evolucion')}
+          className={`flex-1 min-w-[140px] py-3 px-4 rounded-xl font-extrabold text-sm transition cursor-pointer flex items-center justify-center gap-2 ${
+            pestañaActiva === 'evolucion'
+              ? 'bg-blue-600 text-white shadow-lg'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800'
+          }`}
+        >
+          <span>📋</span> Evolución & Historial Cardex
+        </button>
+
+        <button
+          onClick={() => setPestañaActiva('dashboard')}
+          className={`flex-1 min-w-[140px] py-3 px-4 rounded-xl font-extrabold text-sm transition cursor-pointer flex items-center justify-center gap-2 ${
+            pestañaActiva === 'dashboard'
+              ? 'bg-blue-600 text-white shadow-lg'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800'
+          }`}
+        >
+          <span>📊</span> Dashboard de Cumplimiento
+        </button>
+
+        <button
+          onClick={() => setPestañaActiva('catalogo')}
+          className={`flex-1 min-w-[140px] py-3 px-4 rounded-xl font-extrabold text-sm transition cursor-pointer flex items-center justify-center gap-2 ${
+            pestañaActiva === 'catalogo'
+              ? 'bg-blue-600 text-white shadow-lg'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800'
+          }`}
+        >
+          <span>🎬</span> Añadir Nuevo Video al Catálogo
+        </button>
+      </nav>
+
+      {/* CONTENIDO DE LAS PESTAÑAS */}
+
+      {/* PESTAÑA 1: ASIGNACIÓN DE EJERCICIOS Y PROGRESO DE HOY */}
+      {pestañaActiva === 'expediente' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* 3. ASIGNACIÓN INTERACTIVA POR LISTA DESPLEGABLE */}
+          <div className="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl shadow-xl space-y-6">
+            <div>
+              <h3 className="text-2xl font-extrabold text-blue-400 flex items-center gap-2">
+                🏋️ Asignación de Ejercicios Interactivos
+              </h3>
+              <p className="text-sm text-slate-400 mt-1">
+                Selecciona un ejercicio de la lista desplegable conectada al catálogo para asignárselo de inmediato al paciente #{pacienteIdActivo}:
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase">
+                  Lista Desplegable de Ejercicios Disponibles ({ejerciciosCatalogo.length}):
+                </label>
+                <select
+                  value={selectedEjercicioId}
+                  onChange={handleEjercicioSelect}
+                  className="w-full bg-slate-800 border border-blue-500/50 rounded-2xl p-4 text-white font-bold text-base focus:outline-none focus:border-blue-400 cursor-pointer shadow-inner"
+                >
+                  {ejerciciosCatalogo.map((ex) => (
+                    <option key={ex.id} value={ex.id}>
+                      {ex.id}. {ex.titulo} - Zona: {ex.zona_cuerpo || "General"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {ejercicioSeleccionado && (
+                <div className="bg-slate-800/80 border border-slate-700 p-6 rounded-2xl space-y-4">
+                  <div className="flex justify-between items-start gap-3">
+                    <div>
+                      <h4 className="font-extrabold text-white text-lg">{ejercicioSeleccionado.titulo}</h4>
+                      <span className="text-xs text-blue-300 font-semibold bg-blue-950/80 border border-blue-800 px-2.5 py-0.5 rounded-full inline-block mt-1">
+                        Zona: {ejercicioSeleccionado.zona_cuerpo || "General"}
+                      </span>
+                    </div>
+                    <span className="text-xs bg-slate-700 text-slate-300 px-3 py-1 rounded-xl font-bold">
+                      ID Catálogo #{ejercicioSeleccionado.id}
+                    </span>
+                  </div>
+
+                  <p className="text-sm text-slate-300 leading-relaxed bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
+                    {ejercicioSeleccionado.descripcion}
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-slate-400 mb-1 font-bold">Frecuencia / Series sugeridas:</label>
+                      <input
+                        type="text"
+                        value={frecuenciaAsignar}
+                        onChange={(e) => setFrecuenciaAsignar(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white font-semibold focus:outline-none focus:border-blue-500"
+                        placeholder="Ej. 3 series de 10 repeticiones"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-400 mb-1 font-bold">Ruta del Video Asociado:</label>
+                      <input
+                        type="text"
+                        value={ejercicioSeleccionado.url_video || ""}
+                        readOnly
+                        className="w-full bg-slate-950 border border-slate-800 text-slate-400 rounded-xl p-3 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => asignarEjercicioDirecto(ejercicioSeleccionado, frecuenciaAsignar)}
+                    className="w-full mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold py-4 rounded-xl transition text-base cursor-pointer shadow-xl flex items-center justify-center gap-2"
+                  >
+                    <span>+</span> Asignar "{ejercicioSeleccionado.titulo}" a este Paciente
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* PROGRESO EN VIVO HOY */}
+          <div className="space-y-6">
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold text-emerald-400">📊 Progreso de Hoy</h3>
+                <span className="text-xs bg-slate-800 px-3 py-1 rounded-full text-slate-300 font-bold">
+                  {rutinasHoy.filter(r => r.completado_hoy).length}/{rutinasHoy.length} hechos
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {rutinasHoy.length === 0 ? (
+                  <p className="text-slate-500 text-sm italic py-4 text-center">No tiene rutinas asignadas hoy.</p>
+                ) : (
+                  rutinasHoy.map((r) => (
+                    <div key={r.id} className="bg-slate-800/90 p-4 rounded-2xl flex justify-between items-center border border-slate-700/60 shadow">
+                      <div>
+                        <h4 className="font-bold text-white text-sm">{r.ejercicio?.titulo || "Ejercicio"}</h4>
+                        <span className="text-xs text-slate-400 block mt-0.5">{r.frecuencia}</span>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-extrabold ${r.completado_hoy ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-amber-500/20 text-amber-400 border border-amber-500/40'}`}>
+                        {r.completado_hoy ? 'Hecho ✅' : 'Pendiente ⏱️'}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Hoja Resumen de Tratamiento */}
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl space-y-3">
+              <h4 className="text-sm font-bold text-blue-300 uppercase tracking-wider">📋 Hoja de Tratamiento Activo</h4>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                El paciente tiene un plan activo de rehabilitación. Asegúrate de verificar su nivel de dolor antes de incrementar la dificultad o carga de ejercicios.
+              </p>
+              <div className="pt-2">
+                <button
+                  onClick={() => setPestañaActiva('evolucion')}
+                  className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold py-2.5 rounded-xl border border-slate-700 transition cursor-pointer"
+                >
+                  Registrar Nota en Cardex ➔
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PESTAÑA 2: 1. REGISTRAR EVOLUCIÓN Y 6. HISTORIAL CARDEX */}
+      {pestañaActiva === 'evolucion' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* 1. REGISTRAR EVOLUCIÓN ESTRUCTURADA */}
+          <form onSubmit={guardarEvolucionCompleta} className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl shadow-xl space-y-6">
+            <div>
+              <h3 className="text-2xl font-extrabold text-emerald-400 flex items-center gap-2">
+                📝 Registrar Evolución y Actualizar Estado
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">Registra la sesión de hoy en el expediente Cardex del paciente #{pacienteIdActivo}:</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs text-slate-300 mb-1 font-bold">BANDERA CLÍNICA:</label>
+                <select
+                  value={estadoBanner}
+                  onChange={(e) => setEstadoBanner(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white font-bold text-sm focus:outline-none focus:border-emerald-500"
+                >
+                  <option value="Estable 🟢">Estable 🟢</option>
+                  <option value="En Observación 🟡">En Observación 🟡</option>
+                  <option value="Requiere Ajuste 🔴">Requiere Ajuste 🔴</option>
+                  <option value="Alta Médica 🔵">Alta Médica 🔵</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-300 mb-1 font-bold">NIVEL DOLOR (1-10):</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number" min="1" max="10"
+                    value={nivelDolor}
+                    onChange={(e) => setNivelDolor(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white font-bold text-center text-sm"
+                  />
+                  <span className="text-xl">
+                    {nivelDolor <= 3 ? '🟢' : nivelDolor <= 6 ? '🟡' : '🔴'}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-300 mb-1 font-bold">MOVILIDAD:</label>
+                <select
+                  value={rangoMovilidad}
+                  onChange={(e) => setRangoMovilidad(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white font-bold text-sm"
+                >
+                  <option value="Completo/Fluido">Completo / Fluido</option>
+                  <option value="Moderado">Moderado</option>
+                  <option value="Limitado">Limitado</option>
+                  <option value="Con Dolor">Con Dolor</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs text-slate-300 mb-1 font-bold">NOTAS CLÍNICAS Y EVOLUCIÓN DEL DÍA:</label>
+              <textarea
+                rows="4"
+                value={observaciones}
+                onChange={(e) => setObservaciones(e.target.value)}
+                placeholder="Describe el progreso del paciente, tolerancia a los videos y recomendaciones de recuperación..."
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white text-sm focus:outline-none focus:border-emerald-500"
+                required
+              ></textarea>
+            </div>
+
+            <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 font-extrabold text-base py-4 rounded-xl transition shadow-xl cursor-pointer">
+              Guardar Evolución en Base de Datos
+            </button>
+          </form>
+
+          {/* 6. REVISAR HISTORIAL CARDEX Y OPINIONES DEL PACIENTE */}
+          <div className="space-y-6">
+            {/* Historial Cardex */}
+            <div className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl shadow-xl space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-extrabold text-blue-300 flex items-center gap-2">
+                  📋 Historial Clínico (Cardex)
+                </h3>
+                <span className="text-xs bg-slate-800 px-3 py-1 rounded-full text-slate-400 font-bold">
+                  {cardex.length} registros
+                </span>
+              </div>
+
+              {/* Buscador en el historial */}
+              <input
+                type="text"
+                value={filtroHistorial}
+                onChange={(e) => setFiltroHistorial(e.target.value)}
+                placeholder="🔍 Filtrar notas del historial..."
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+              />
+
+              <div className="space-y-3 max-h-[380px] overflow-y-auto pr-2">
+                {cardexFiltrado.length === 0 ? (
+                  <p className="text-slate-500 text-sm italic py-4 text-center">Sin registros en el Cardex para este paciente.</p>
+                ) : (
+                  cardexFiltrado.map((item, idx) => (
+                    <div key={idx} className="bg-slate-800/90 border-l-4 border-blue-500 p-4 rounded-2xl space-y-1 shadow">
+                      <div className="flex justify-between items-center text-xs text-blue-400 font-semibold">
+                        <span>Consulta #{item.id || idx + 1}</span>
+                        <span>{item.fecha ? new Date(item.fecha).toLocaleDateString() : 'Hoy'}</span>
+                      </div>
+                      <p className="text-slate-200 text-sm leading-relaxed">{item.notas_clinicas}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Opiniones y Mensajes Enviados por el Paciente */}
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl space-y-3">
+              <h4 className="text-sm font-bold text-amber-300 uppercase tracking-wider flex items-center gap-2">
+                💬 Opiniones y Feedback Recibido del Paciente ({feedbackPaciente.length})
+              </h4>
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                {feedbackPaciente.length === 0 ? (
+                  <p className="text-slate-500 text-xs italic">El paciente aún no ha enviado comentarios u opiniones.</p>
+                ) : (
+                  feedbackPaciente.map((fb, idx) => (
+                    <div key={idx} className="bg-slate-800/70 p-3 rounded-xl border border-slate-700/50 space-y-1">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-bold text-amber-400">{fb.sensacion_dolor || "Reporte"}</span>
+                        <span className="text-[11px] text-slate-500">{fb.fecha ? new Date(fb.fecha).toLocaleDateString() : 'Reciente'}</span>
+                      </div>
+                      <p className="text-xs text-slate-300 italic">"{fb.comentario}"</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PESTAÑA 3: 7. DASHBOARD DE EJERCICIOS Y CUMPLIMIENTO */}
+      {pestañaActiva === 'dashboard' && (
+        <div className="space-y-8">
+          {/* Tarjetas KPI */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl">
+              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Total Pacientes</span>
+              <div className="text-3xl font-extrabold text-white mt-2 flex items-center justify-between">
+                <span>{dashboardData.total_pacientes}</span>
+                <span className="text-2xl">👥</span>
+              </div>
+              <span className="text-xs text-emerald-400 mt-2 block">Registrados en el sistema</span>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl">
+              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Rutinas Asignadas Hoy</span>
+              <div className="text-3xl font-extrabold text-blue-400 mt-2 flex items-center justify-between">
+                <span>{dashboardData.total_rutinas}</span>
+                <span className="text-2xl">📋</span>
+              </div>
+              <span className="text-xs text-slate-400 mt-2 block">En todos los pacientes</span>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl">
+              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Ejercicios Realizados</span>
+              <div className="text-3xl font-extrabold text-emerald-400 mt-2 flex items-center justify-between">
+                <span>{dashboardData.completadas}</span>
+                <span className="text-2xl">✅</span>
+              </div>
+              <span className="text-xs text-slate-400 mt-2 block">Pendientes: {dashboardData.pendientes}</span>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl">
+              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Tasa de Adherencia</span>
+              <div className="text-3xl font-extrabold text-indigo-400 mt-2 flex items-center justify-between">
+                <span>{dashboardData.tasa_adherencia}%</span>
+                <span className="text-2xl">📈</span>
+              </div>
+              <span className="text-xs text-indigo-300 mt-2 block">Cumplimiento terapéutico</span>
+            </div>
+          </div>
+
+          {/* Tabla de Seguimiento de Pacientes */}
+          <div className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl shadow-xl space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
+                📊 Monitoreo de Cumplimiento por Paciente
+              </h3>
+              <button
+                onClick={cargarDashboard}
+                className="bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 px-3 py-1.5 rounded-xl border border-slate-700 transition cursor-pointer"
+              >
+                🔄 Actualizar Métricas
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-300">
+                <thead className="bg-slate-800 text-xs uppercase text-slate-400 font-bold">
+                  <tr>
+                    <th className="p-3.5 rounded-l-xl">ID</th>
+                    <th className="p-3.5">Paciente</th>
+                    <th className="p-3.5">Email</th>
+                    <th className="p-3.5">Rutinas Asignadas</th>
+                    <th className="p-3.5">Completadas Hoy</th>
+                    <th className="p-3.5 rounded-r-xl">Estado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {dashboardData.pacientes.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="p-4 text-center text-slate-500 italic">No hay pacientes registrados.</td>
+                    </tr>
+                  ) : (
+                    dashboardData.pacientes.map((p) => (
+                      <tr key={p.id} className="hover:bg-slate-800/40 transition">
+                        <td className="p-3.5 font-bold text-blue-400">#{p.id}</td>
+                        <td className="p-3.5 font-semibold text-white">{p.nombre}</td>
+                        <td className="p-3.5 text-xs text-slate-400">{p.email}</td>
+                        <td className="p-3.5 font-bold">{p.total_rutinas}</td>
+                        <td className="p-3.5 font-bold text-emerald-400">{p.completadas}</td>
+                        <td className="p-3.5">
+                          <button
+                            onClick={() => {
+                              seleccionarPacienteDirecto(p.id);
+                              setPestañaActiva('expediente');
+                            }}
+                            className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition ${
+                              p.al_dia
+                                ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                                : p.total_rutinas === 0
+                                ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+                            }`}
+                          >
+                            {p.al_dia ? 'Al día ✅' : p.total_rutinas === 0 ? 'Sin Rutinas ＋' : 'Pendiente ⏱️'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PESTAÑA 4: 5. AÑADIR NUEVO VIDEO INTERACTIVO AL CATÁLOGO */}
+      {pestañaActiva === 'catalogo' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Formulario para registrar nuevo video */}
+          <form onSubmit={registrarNuevoEjercicioCatalogo} className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl shadow-xl space-y-4">
+            <h3 className="text-2xl font-extrabold text-blue-400 flex items-center gap-2">
+              🎬 Añadir Nuevo Video Interactivo al Catálogo
+            </h3>
+            <p className="text-xs text-slate-400">
+              Registra un nuevo ejercicio o video en la base de datos para que quede disponible inmediatamente en la lista desplegable de asignación médica:
+            </p>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">TÍTULO DEL EJERCICIO:</label>
+              <input
+                type="text"
+                value={nuevoVideoTitulo}
+                onChange={(e) => setNuevoVideoTitulo(e.target.value)}
+                placeholder="Ej. Flexión de Hombro con Banda"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-blue-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">ZONA DEL CUERPO / ARTICULACIÓN:</label>
+              <select
+                value={nuevoVideoZona}
+                onChange={(e) => setNuevoVideoZona(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm font-semibold focus:outline-none focus:border-blue-500"
+              >
+                <option value="Pierna">Pierna / Rodilla</option>
+                <option value="Hombro">Hombro / Brazo</option>
+                <option value="Espalda">Espalda / Columna</option>
+                <option value="Cadera">Cadera</option>
+                <option value="General">Cardiovascular / General</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">DESCRIPCIÓN CLÍNICA Y BENEFICIOS:</label>
+              <textarea
+                rows="3"
+                value={nuevoVideoDesc}
+                onChange={(e) => setNuevoVideoDesc(e.target.value)}
+                placeholder="Describe el objetivo terapéutico, músculos trabajados y técnica correcta..."
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-blue-500"
+                required
+              ></textarea>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">RUTA O ENLACE DEL VIDEO MP4:</label>
+              <input
+                type="text"
+                value={nuevoVideoUrl}
+                onChange={(e) => setNuevoVideoUrl(e.target.value)}
+                placeholder="Ej. /videos/rodilla.mp4 o URL externa"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-blue-500 font-mono text-xs"
+                required
+              />
+            </div>
+
+            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 font-extrabold text-base py-4 rounded-xl transition shadow-xl cursor-pointer">
+              Guardar en Catálogo Médico
+            </button>
+          </form>
+
+          {/* Biblioteca actual de videos */}
+          <div className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl shadow-xl space-y-4">
+            <h3 className="text-xl font-extrabold text-emerald-400">
+              📚 Biblioteca Actual de Videos ({ejerciciosCatalogo.length})
+            </h3>
+            <p className="text-xs text-slate-400">Ejercicios disponibles en la base de datos de la plataforma:</p>
+
+            <div className="space-y-3 max-h-[460px] overflow-y-auto pr-2">
+              {ejerciciosCatalogo.map((ex) => (
+                <div key={ex.id} className="bg-slate-800/90 border border-slate-700 p-4 rounded-2xl space-y-2">
+                  <div className="flex justify-between items-start">
+                    <h4 className="font-bold text-white text-base">{ex.titulo}</h4>
+                    <span className="text-xs bg-blue-950 text-blue-300 px-2.5 py-0.5 rounded-full font-bold">
+                      {ex.zona_cuerpo || "General"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300">{ex.descripcion}</p>
+                  <span className="text-[11px] text-slate-400 font-mono block">Video: {ex.url_video}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
