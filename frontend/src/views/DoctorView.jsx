@@ -48,37 +48,37 @@ export default function DoctorView() {
 
   const [isPdfLoading, setIsPdfLoading] = useState(false);
 
-  const descargarPDF = async () => {
+  const descargarPDF = () => {
     const element = document.getElementById('historia-clinica-pdf');
     if (!element) return;
     
+    // 1. Cambiamos el estado para que React quite el scroll y muestre "Generando..."
     setIsPdfLoading(true);
     
-    // Remover overflow para que html2pdf capture el contenedor completo sin recortarlo o congelarse
-    const historyContainer = document.getElementById('historial-scroll-container');
-    if (historyContainer) {
-      historyContainer.classList.remove('max-h-[380px]', 'overflow-y-auto');
-    }
-
-    const opt = {
-      margin:       10,
-      filename:     `Historia_Clinica_${paciente?.nombre || 'Paciente'}.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, logging: false },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-    
-    try {
-      await html2pdf().from(element).set(opt).save();
-    } catch (error) {
-      console.error("Error al generar PDF:", error);
-      alert("Hubo un error al generar el documento PDF.");
-    } finally {
-      if (historyContainer) {
-        historyContainer.classList.add('max-h-[380px]', 'overflow-y-auto');
-      }
-      setIsPdfLoading(false);
-    }
+    // 2. Esperamos a que React re-renderice y el DOM se expanda completamente
+    setTimeout(() => {
+      const opt = {
+        margin:       10,
+        filename:     `Historia_Clinica_${paciente?.nombre || 'Paciente'}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { 
+          scale: 2,
+          // Ignorar botones e inputs en el PDF impreso
+          ignoreElements: (node) => node.tagName === 'BUTTON' || node.tagName === 'INPUT' 
+        },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      
+      html2pdf().from(element).set(opt).save()
+        .then(() => {
+          setIsPdfLoading(false);
+        })
+        .catch((error) => {
+          console.error("Error al generar PDF:", error);
+          alert("Hubo un error al generar el documento PDF.");
+          setIsPdfLoading(false);
+        });
+    }, 400); // Dar 400ms al navegador para recalcular el tamaño sin scroll
   };
 
   // Estados Formulario Nuevo Video Interactivo
@@ -861,7 +861,7 @@ export default function DoctorView() {
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
               />
 
-              <div id="historial-scroll-container" className="space-y-3 max-h-[380px] overflow-y-auto pr-2">
+              <div id="historial-scroll-container" className={`space-y-3 pr-2 ${isPdfLoading ? '' : 'max-h-[380px] overflow-y-auto'}`}>
                 {cardexFiltrado.length === 0 ? (
                   <p className="text-slate-500 text-sm italic py-4 text-center">Sin registros en el Cardex para este paciente.</p>
                 ) : (
