@@ -46,17 +46,39 @@ export default function DoctorView() {
   const [nuevasContraindicaciones, setNuevasContraindicaciones] = useState("");
   const [nuevosComentarios, setNuevosComentarios] = useState("");
 
-  const descargarPDF = () => {
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
+
+  const descargarPDF = async () => {
     const element = document.getElementById('historia-clinica-pdf');
     if (!element) return;
+    
+    setIsPdfLoading(true);
+    
+    // Remover overflow para que html2pdf capture el contenedor completo sin recortarlo o congelarse
+    const historyContainer = document.getElementById('historial-scroll-container');
+    if (historyContainer) {
+      historyContainer.classList.remove('max-h-[380px]', 'overflow-y-auto');
+    }
+
     const opt = {
       margin:       10,
       filename:     `Historia_Clinica_${paciente?.nombre || 'Paciente'}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2 },
+      html2canvas:  { scale: 2, useCORS: true, logging: false },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
-    html2pdf().from(element).set(opt).save();
+    
+    try {
+      await html2pdf().from(element).set(opt).save();
+    } catch (error) {
+      console.error("Error al generar PDF:", error);
+      alert("Hubo un error al generar el documento PDF.");
+    } finally {
+      if (historyContainer) {
+        historyContainer.classList.add('max-h-[380px]', 'overflow-y-auto');
+      }
+      setIsPdfLoading(false);
+    }
   };
 
   // Estados Formulario Nuevo Video Interactivo
@@ -290,7 +312,7 @@ export default function DoctorView() {
   );
 
   return (
-    <div className="min-h-screen w-full bg-slate-950 text-slate-100 font-sans p-4 sm:p-6 md:p-10">
+    <div className="min-h-screen w-full bg-slate-950 text-slate-100 font-sans p-4 sm:p-6 md:p-10 pb-28">
 
       {/* Header Principal */}
       <header className="mb-8 border-b border-slate-800 pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -809,9 +831,10 @@ export default function DoctorView() {
                   </span>
                   <button 
                     onClick={descargarPDF} 
-                    className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-xl font-bold text-xs transition flex items-center gap-1 shadow-md cursor-pointer"
+                    disabled={isPdfLoading}
+                    className={`px-3 py-1.5 rounded-xl font-bold text-xs transition flex items-center gap-1 shadow-md ${isPdfLoading ? 'bg-slate-600 text-slate-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white cursor-pointer'}`}
                   >
-                    ⬇️ Descargar PDF
+                    {isPdfLoading ? '⏳ Generando...' : '⬇️ Descargar PDF'}
                   </button>
                 </div>
               </div>
@@ -838,7 +861,7 @@ export default function DoctorView() {
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
               />
 
-              <div className="space-y-3 max-h-[380px] overflow-y-auto pr-2">
+              <div id="historial-scroll-container" className="space-y-3 max-h-[380px] overflow-y-auto pr-2">
                 {cardexFiltrado.length === 0 ? (
                   <p className="text-slate-500 text-sm italic py-4 text-center">Sin registros en el Cardex para este paciente.</p>
                 ) : (

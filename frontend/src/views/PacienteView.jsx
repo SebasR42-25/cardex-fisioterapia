@@ -147,7 +147,7 @@ export default function PacienteView() {
   const strokeDashoffset = 125.6 - (125.6 * porcentajeProgreso) / 100;
 
   return (
-    <div className="min-h-screen w-full bg-amber-50 text-slate-800 font-sans p-4 sm:p-6 md:p-12 flex flex-col items-center">
+    <div className="min-h-screen w-full bg-amber-50 text-slate-800 font-sans p-4 sm:p-6 md:p-12 pb-28 flex flex-col items-center">
       <div className="w-full max-w-4xl space-y-6">
 
         {/* Barra superior de navegación */}
