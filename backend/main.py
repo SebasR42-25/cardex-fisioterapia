@@ -32,10 +32,18 @@ class Usuario(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String(100), nullable=False)
+    identificacion = Column(String(50), unique=True, index=True, nullable=True)
     email = Column(String(100), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     rol = Column(Enum(RolUsuario), nullable=False)
     fecha_registro = Column(DateTime, default=datetime.utcnow)
+
+    # Campos médicos para pacientes
+    datos_medicos_generales = Column(Text, nullable=True)
+    alergias = Column(Text, nullable=True)
+    prescripciones_previas = Column(Text, nullable=True)
+    contraindicaciones = Column(Text, nullable=True)
+    comentarios = Column(Text, nullable=True)
 
     cardex_como_paciente = relationship("Cardex", foreign_keys='Cardex.paciente_id', back_populates="paciente")
     cardex_como_doctor = relationship("Cardex", foreign_keys='Cardex.doctor_id', back_populates="doctor")
@@ -128,10 +136,20 @@ class PacienteResponse(BaseModel):
     id: int
     nombre: str
     email: str
+    identificacion: str | None = None
     rol: RolUsuario
+    datos_medicos_generales: str | None = None
+    alergias: str | None = None
+    prescripciones_previas: str | None = None
+    contraindicaciones: str | None = None
+    comentarios: str | None = None
 
     class Config:
         from_attributes = True
+
+class LoginRequest(BaseModel):
+    identificacion: str
+    password: str
 
 
 class CardexCreate(BaseModel):
@@ -147,6 +165,12 @@ class PacienteRegistroCompleto(BaseModel):
     nombre: str
     email: EmailStr
     password: str
+    identificacion: str | None = None
+    datos_medicos_generales: str | None = None
+    alergias: str | None = None
+    prescripciones_previas: str | None = None
+    contraindicaciones: str | None = None
+    comentarios: str | None = None
 
 class EstadoPacienteUpdate(BaseModel):
     estado_clinico: str # Ej: "Estable", "En Observación", "Alta"
@@ -355,12 +379,37 @@ def agregar_nuevo_ejercicio(data: EjercicioCreate, db: Session = Depends(get_db)
     db.refresh(nuevo_ej)
     return {"mensaje": "Ejercicio registrado con éxito en el catálogo", "ejercicio": nuevo_ej}
 
+@app.post("/login")
+def login_usuario(data: LoginRequest, db: Session = Depends(get_db)):
+    # Buscar por identificacion
+    usuario = db.query(Usuario).filter(Usuario.identificacion == data.identificacion).first()
+    if not usuario:
+        # Fallback a buscar por ID si la identificacion es un numero y no lo encontro
+        if data.identificacion.isdigit():
+            usuario = db.query(Usuario).filter(Usuario.id == int(data.identificacion)).first()
+            
+    if not usuario or usuario.password_hash != data.password:
+        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+    
+    return {
+        "id": usuario.id,
+        "nombre": usuario.nombre,
+        "rol": usuario.rol.value,
+        "identificacion": usuario.identificacion
+    }
+
 @app.post("/pacientes/registrar", status_code=status.HTTP_201_CREATED)
 def registrar_nuevo_paciente(data: PacienteRegistroCompleto, db: Session = Depends(get_db)):
     nuevo = Usuario(
         nombre=data.nombre,
         email=data.email,
         password_hash=data.password,
+        identificacion=data.identificacion,
+        datos_medicos_generales=data.datos_medicos_generales,
+        alergias=data.alergias,
+        prescripciones_previas=data.prescripciones_previas,
+        contraindicaciones=data.contraindicaciones,
+        comentarios=data.comentarios,
         rol=RolUsuario.PACIENTE
     )
     db.add(nuevo)
@@ -451,22 +500,77 @@ def startup_event():
                 id=99,
                 nombre="Dra. Valentina Cardona (Fisioterapeuta)",
                 email="doctor@cardex.com",
+                identificacion="123456789", # Cédula médica
                 password_hash="123456",
                 rol=RolUsuario.DOCTOR
             )
             db.add(doctor)
 
-        # 3. Paciente Demo base
-        paciente1 = db.query(Usuario).filter(Usuario.id == 1).first()
-        if not paciente1:
-            paciente1 = Usuario(
-                id=1,
-                nombre="Juan Pablo Rojas",
-                email="juan.rojas@cardex.com",
-                password_hash="123456",
-                rol=RolUsuario.PACIENTE
-            )
-            db.add(paciente1)
+        # 3. Pacientes de prueba
+        pacientes_data = [
+            {
+                "id": 1,
+                "nombre": "Juan Pablo Rojas",
+                "email": "juan.rojas@cardex.com",
+                "identificacion": "1",
+                "datos_medicos_generales": "Hipertensión controlada",
+                "alergias": "Penicilina",
+                "prescripciones_previas": "Paracetamol 500mg, Losartán 50mg",
+                "contraindicaciones": "Evitar ejercicios de alto impacto",
+                "comentarios": "Paciente cooperativo, asiste con su nieta"
+            },
+            {
+                "id": 2,
+                "nombre": "María Antonieta de las Nieves",
+                "email": "maria@cardex.com",
+                "identificacion": "2",
+                "datos_medicos_generales": "Osteoartritis de rodilla leve",
+                "alergias": "Ninguna",
+                "prescripciones_previas": "Ibuprofeno 400mg condicional",
+                "contraindicaciones": "Cargas pesadas",
+                "comentarios": "Requiere paciencia en explicación de ejercicios"
+            },
+            {
+                "id": 3,
+                "nombre": "Carlos Villagrán",
+                "email": "carlos@cardex.com",
+                "identificacion": "3",
+                "datos_medicos_generales": "Post-operatorio cadera hace 6 meses",
+                "alergias": "Látex",
+                "prescripciones_previas": "Calcio y Vitamina D",
+                "contraindicaciones": "Flexión de cadera > 90°",
+                "comentarios": "Muy motivado con su rehabilitación"
+            },
+            {
+                "id": 4,
+                "nombre": "Florinda Meza",
+                "email": "florinda@cardex.com",
+                "identificacion": "4",
+                "datos_medicos_generales": "Sana, asiste por prevención",
+                "alergias": "Ninguna conocida",
+                "prescripciones_previas": "Ninguna",
+                "contraindicaciones": "Ninguna conocida",
+                "comentarios": "Excelente estado físico para su edad"
+            }
+        ]
+
+        for p_data in pacientes_data:
+            paciente = db.query(Usuario).filter(Usuario.id == p_data["id"]).first()
+            if not paciente:
+                paciente = Usuario(
+                    id=p_data["id"],
+                    nombre=p_data["nombre"],
+                    email=p_data["email"],
+                    identificacion=p_data["identificacion"],
+                    password_hash="123456",
+                    datos_medicos_generales=p_data["datos_medicos_generales"],
+                    alergias=p_data["alergias"],
+                    prescripciones_previas=p_data["prescripciones_previas"],
+                    contraindicaciones=p_data["contraindicaciones"],
+                    comentarios=p_data["comentarios"],
+                    rol=RolUsuario.PACIENTE
+                )
+                db.add(paciente)
 
         db.commit()
 

@@ -29,7 +29,9 @@ export default function ChatWidget() {
     { label: '🚨 ¿Qué hacer si siento dolor?', texto: 'Siento dolor al hacer el ejercicio' },
     { label: '🦵 Ejercicio de Rodilla', texto: '¿Cómo hacer la extensión de rodilla?' },
     { label: '🚶 Caminata Segura', texto: 'Consejos para la caminata' },
-    { label: '👨‍⚕️ Contactar al Doctor', texto: '¿Cómo le escribo a mi médico?' }
+    { label: '👨‍⚕️ Contactar al Doctor', texto: '¿Cómo le escribo a mi médico?' },
+    { label: '💊 Mis Medicamentos', texto: '¿Puedo tomar mis medicinas antes de la rutina?' },
+    { label: '⏰ Horarios Ideales', texto: '¿Cuál es la mejor hora para hacer los ejercicios?' }
   ];
 
   const scrollAlFinal = () => {
@@ -58,16 +60,22 @@ export default function ChatWidget() {
       return '👨‍⚕️ **Comunicación con tu especialista:** Tu médico revisa diariamente tu Cardex y el progreso de tus ejercicios. Puedes enviarle notas directas y reportar tu nivel de dolor desde la sección inferior de **Opiniones y Mensajes al Doctor**.';
     }
     if (q.includes('video') || q.includes('reproducir') || q.includes('pantalla') || q.includes('ver') || q.includes('cómo')) {
-      return '▶️ **Reproducción de videos:** Haz clic en el botón azul **"▶ Ver Video"** en cualquiera de tus ejercicios asignados. El reproductor amplio se abrirá arriba. Puedes pausarlo o verlo tantas veces como desees.';
+      return '▶️ **Reproducción de videos:** Haz clic en el botón **"▶ Ver Video"** en cualquiera de tus ejercicios asignados. El reproductor amplio se abrirá arriba. Puedes pausarlo o verlo tantas veces como desees.';
     }
     if (q.includes('cansan') || q.includes('fatiga') || q.includes('agotad') || q.includes('cansad')) {
       return '💧 **Manejo de fatiga:** Es completamente normal sentir esfuerzo muscular moderado, pero no agotamiento excesivo. Descansa 1 o 2 minutos entre repeticiones e hidrátate con pequeños sorbos de agua.';
+    }
+    if (q.includes('medicina') || q.includes('medicamento') || q.includes('pastilla')) {
+      return '💊 **Medicamentos:** Sí, puedes tomar tu medicación habitual según te haya recetado el médico general. Te sugiero esperar unos 30 minutos después de comer o tomar pastillas antes de iniciar la rutina física.';
+    }
+    if (q.includes('hora') || q.includes('cuando') || q.includes('cuándo') || q.includes('horario') || q.includes('mejor momento')) {
+      return '⏰ **Horarios Ideales:** Te recomendamos hacer tus ejercicios por la mañana (después del desayuno) o a media tarde, evitando las horas de más calor y no muy cerca de la hora de dormir, para que puedas descansar adecuadamente.';
     }
     if (q.includes('hola') || q.includes('buenos') || q.includes('buenas') || q.includes('saludos') || q.includes('inicio') || q.includes('ayuda')) {
       return '👋 **¡Hola! Estoy para servirte.** Puedes preguntarme sobre técnicas de ejercicio, qué hacer si sientes molestia, cómo ver tus videos o cómo enviar notas a tu médico.';
     }
 
-    return '🤖 **Asistente Cardex:** He recibido tu consulta. Para recomendaciones específicas sobre tu tratamiento, revisa las notas de tu médico en la parte superior o pregúntame sobre: **dolor**, **rodilla**, **caminata** o **cómo ver videos**.';
+    return '🤖 **Asistente Cardex:** He recibido tu consulta. Para recomendaciones específicas sobre tu tratamiento, revisa las notas de tu médico en la parte superior o pregúntame sobre: **dolor**, **rodilla**, **caminata**, **horarios** o **cómo ver videos**.';
   };
 
   const enviarMensaje = (textoAEnviar) => {

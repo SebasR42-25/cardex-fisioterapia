@@ -1,8 +1,16 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginView from './views/LoginView';
 import PacienteView from './views/PacienteView';
 import DoctorView from './views/DoctorView';
 import ChatWidget from './components/ChatWidget';
+
+function PrivateRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('cardex_user'));
+  if (!user || user.rol !== 'doctor') {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+}
 
 export default function App() {
   return (
@@ -11,7 +19,11 @@ export default function App() {
         <Routes>
           <Route path="/" element={<LoginView />} />
           <Route path="/paciente/:id" element={<PacienteView />} />
-          <Route path="/doctor" element={<DoctorView />} />
+          <Route path="/doctor" element={
+            <PrivateRoute>
+              <DoctorView />
+            </PrivateRoute>
+          } />
         </Routes>
         <ChatWidget />
       </div>

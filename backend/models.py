@@ -17,10 +17,18 @@ class Usuario(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String(100), nullable=False)
+    identificacion = Column(String(50), unique=True, index=True, nullable=True)
     email = Column(String(100), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     rol = Column(Enum(RolUsuario), nullable=False)
     fecha_registro = Column(DateTime, default=datetime.utcnow)
+
+    # Campos médicos para pacientes
+    datos_medicos_generales = Column(Text, nullable=True)
+    alergias = Column(Text, nullable=True)
+    prescripciones_previas = Column(Text, nullable=True)
+    contraindicaciones = Column(Text, nullable=True)
+    comentarios = Column(Text, nullable=True)
 
     # Relaciones
     cardex_como_paciente = relationship("Cardex", foreign_keys='Cardex.paciente_id', back_populates="paciente")

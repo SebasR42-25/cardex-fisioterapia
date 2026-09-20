@@ -1,14 +1,36 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from '../config';
 
 export default function LoginView() {
-  const [pacienteIdInput, setPacienteIdInput] = useState("1");
+  const [identificacion, setIdentificacion] = useState("");
+  const [password, setPassword] = useState("123456");
+  const [isDoctor, setIsDoctor] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmitPaciente = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (pacienteIdInput.trim()) {
-      navigate(`/paciente/${pacienteIdInput.trim()}`);
+    setError("");
+    try {
+      const res = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identificacion: identificacion.trim(), password })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem('cardex_user', JSON.stringify(data));
+        if (data.rol === 'doctor') {
+          navigate('/doctor');
+        } else {
+          navigate(`/paciente/${data.id}`);
+        }
+      } else {
+        setError("Credenciales inválidas. Inténtalo de nuevo.");
+      }
+    } catch (err) {
+      setError("Error al conectar con el servidor.");
     }
   };
 
@@ -22,54 +44,66 @@ export default function LoginView() {
           </div>
           <h1 className="text-3xl font-extrabold text-blue-400 tracking-tight">Cardex Fisioterapia</h1>
           <p className="text-sm text-slate-400">
-            Plataforma de seguimiento y rehabilitación inteligente para adultos mayores
+            Plataforma de seguimiento y rehabilitación inteligente
           </p>
         </div>
 
-        <div className="space-y-4 pt-4 border-t border-slate-800">
-          {/* Acceso Paciente */}
-          <form onSubmit={handleSubmitPaciente} className="text-left space-y-2">
-            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
-              Acceso Paciente (ID / Pulsera NFC / QR)
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="number"
-                value={pacienteIdInput}
-                onChange={(e) => setPacienteIdInput(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-base focus:outline-none focus:border-blue-500 font-semibold"
-                placeholder="ID Paciente (ej: 1)"
-                required
-              />
-              <button
-                type="submit"
-                className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-xl font-bold transition text-white shadow-lg cursor-pointer text-sm whitespace-nowrap"
-              >
-                Entrar ➔
-              </button>
-            </div>
-          </form>
-
-          {/* Botones de Acceso Rápido */}
-          <div className="pt-2 space-y-2.5">
-            <button
-              onClick={() => navigate('/paciente/1')}
-              className="w-full bg-slate-800/80 hover:bg-slate-800 border border-blue-500/30 text-blue-300 font-semibold py-3 rounded-xl transition text-xs flex items-center justify-center gap-2 cursor-pointer"
+        <div className="flex bg-slate-800 rounded-xl p-1 mb-4">
+            <button 
+              onClick={() => setIsDoctor(false)}
+              className={`flex-1 py-2 text-sm font-bold rounded-lg transition ${!isDoctor ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
             >
-              <span>👤</span> Iniciar como Paciente Demo (ID #1 - Juan Pablo)
+              Paciente
             </button>
-
-            <button
-              onClick={() => navigate('/doctor')}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 rounded-xl transition shadow-xl flex items-center justify-center gap-2 cursor-pointer text-sm"
+            <button 
+              onClick={() => setIsDoctor(true)}
+              className={`flex-1 py-2 text-sm font-bold rounded-lg transition ${isDoctor ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
             >
-              <span>👩‍⚕️</span> Ingresar al Portal Médico (Cardex & Gestión)
+              Doctor
             </button>
-          </div>
         </div>
 
-        <div className="pt-2 border-t border-slate-800/60 text-[11px] text-slate-500 flex justify-between items-center px-1">
-          <span>v1.0 Listo para Evaluación</span>
+        <form onSubmit={handleLogin} className="space-y-4 text-left">
+            {error && <p className="text-red-400 text-xs font-bold text-center">{error}</p>}
+            
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+                {isDoctor ? "Cédula Médica" : "ID de Paciente / Identificación"}
+              </label>
+              <input
+                type="text"
+                value={identificacion}
+                onChange={(e) => setIdentificacion(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-base focus:outline-none focus:border-blue-500 font-semibold"
+                placeholder={isDoctor ? "Ej: 123456789" : "Ej: 1"}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+                Contraseña
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-base focus:outline-none focus:border-blue-500 font-semibold"
+                placeholder="********"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className={`w-full ${isDoctor ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-blue-600 hover:bg-blue-500'} px-6 py-3.5 rounded-xl font-bold transition text-white shadow-lg cursor-pointer text-sm`}
+            >
+              Ingresar al Portal
+            </button>
+        </form>
+
+        <div className="pt-4 border-t border-slate-800/60 text-[11px] text-slate-500 flex justify-between items-center px-1 mt-6">
+          <span>v1.1 Autenticación Segura</span>
           <span className="text-emerald-400 font-medium">● Servidor Activo</span>
         </div>
 

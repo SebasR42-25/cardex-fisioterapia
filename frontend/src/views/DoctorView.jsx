@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import html2pdf from 'html2pdf.js';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { API_URL } from '../config';
 
 export default function DoctorView() {
@@ -37,6 +39,25 @@ export default function DoctorView() {
   const [nuevoNombre, setNuevoNombre] = useState("");
   const [nuevoEmail, setNuevoEmail] = useState("");
   const [nuevoPassword, setNuevoPassword] = useState("123456");
+  const [nuevaIdentificacion, setNuevaIdentificacion] = useState("");
+  const [nuevoDatosMedicos, setNuevoDatosMedicos] = useState("");
+  const [nuevasAlergias, setNuevasAlergias] = useState("");
+  const [nuevasPrescripciones, setNuevasPrescripciones] = useState("");
+  const [nuevasContraindicaciones, setNuevasContraindicaciones] = useState("");
+  const [nuevosComentarios, setNuevosComentarios] = useState("");
+
+  const descargarPDF = () => {
+    const element = document.getElementById('historia-clinica-pdf');
+    if (!element) return;
+    const opt = {
+      margin:       10,
+      filename:     `Historia_Clinica_${paciente?.nombre || 'Paciente'}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().from(element).set(opt).save();
+  };
 
   // Estados Formulario Nuevo Video Interactivo
   const [nuevoVideoTitulo, setNuevoVideoTitulo] = useState("");
@@ -195,7 +216,17 @@ export default function DoctorView() {
     const res = await fetch(`${API_URL}/pacientes/registrar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: nuevoNombre, email: nuevoEmail, password: nuevoPassword })
+      body: JSON.stringify({ 
+        nombre: nuevoNombre, 
+        email: nuevoEmail, 
+        password: nuevoPassword,
+        identificacion: nuevaIdentificacion,
+        datos_medicos_generales: nuevoDatosMedicos,
+        alergias: nuevasAlergias,
+        prescripciones_previas: nuevasPrescripciones,
+        contraindicaciones: nuevasContraindicaciones,
+        comentarios: nuevosComentarios
+      })
     });
     if (res.ok) {
       const data = await res.json();
@@ -204,6 +235,12 @@ export default function DoctorView() {
       setPacienteIdActivo(data.id.toString());
       setNuevoNombre("");
       setNuevoEmail("");
+      setNuevaIdentificacion("");
+      setNuevoDatosMedicos("");
+      setNuevasAlergias("");
+      setNuevasPrescripciones("");
+      setNuevasContraindicaciones("");
+      setNuevosComentarios("");
       setMostrarFormCrear(false);
       cargarPacientes();
       cargarDashboard();
@@ -243,6 +280,15 @@ export default function DoctorView() {
     (item.fecha && item.fecha.toLowerCase().includes(filtroHistorial.toLowerCase()))
   );
 
+  const hayAlertaUrgente = feedbackPaciente.some(fb => 
+    fb.sensacion_dolor?.toLowerCase().includes('fuerte') || 
+    fb.sensacion_dolor?.toLowerCase().includes('insoportable') ||
+    fb.sensacion_dolor?.includes('8') || fb.sensacion_dolor?.includes('9') || 
+    fb.sensacion_dolor?.includes('10') ||
+    fb.comentario?.toLowerCase().includes('mucho dolor') ||
+    fb.comentario?.toLowerCase().includes('me duele')
+  );
+
   return (
     <div className="min-h-screen w-full bg-slate-950 text-slate-100 font-sans p-4 sm:p-6 md:p-10">
 
@@ -274,6 +320,19 @@ export default function DoctorView() {
         </div>
       </header>
 
+      {/* ALERTA TEMPRANA 🚨 */}
+      {hayAlertaUrgente && pestañaActiva === 'expediente' && (
+        <div className="bg-red-500/20 border border-red-500/50 p-4 rounded-2xl mb-8 flex items-center justify-between shadow-[0_0_15px_rgba(239,68,68,0.3)] animate-pulse">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">🚨</span>
+            <div>
+              <h4 className="font-extrabold text-red-400">¡Alerta Temprana de Dolor Severo!</h4>
+              <p className="text-sm text-red-200">El paciente actual ha reportado altos niveles de dolor recientemente. Por favor revisa sus notas y ajusta las rutinas de inmediato.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 4. FORMULARIO REGISTRAR NUEVO PACIENTE (Colapsable) */}
       {mostrarFormCrear && (
         <form onSubmit={registrarPacienteBase} className="bg-slate-900 border border-emerald-500/50 p-6 sm:p-8 rounded-3xl shadow-2xl mb-8 space-y-4 animate-in fade-in">
@@ -287,7 +346,7 @@ export default function DoctorView() {
           </div>
           <p className="text-sm text-slate-400">Ingresa los datos del paciente para generar su expediente y credenciales de acceso automático.</p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs text-slate-300 mb-1 font-bold">NOMBRE COMPLETO:</label>
               <input
@@ -318,6 +377,65 @@ export default function DoctorView() {
                 onChange={(e) => setNuevoPassword(e.target.value)}
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-emerald-500"
                 required
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-300 mb-1 font-bold">IDENTIFICACIÓN (ID):</label>
+              <input
+                type="text"
+                value={nuevaIdentificacion}
+                onChange={(e) => setNuevaIdentificacion(e.target.value)}
+                placeholder="Ej. 12345678"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs text-slate-300 mb-1 font-bold">DATOS MÉDICOS GENERALES:</label>
+              <input
+                type="text"
+                value={nuevoDatosMedicos}
+                onChange={(e) => setNuevoDatosMedicos(e.target.value)}
+                placeholder="Enfermedades crónicas, estado general..."
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-300 mb-1 font-bold">ALERGIAS:</label>
+              <input
+                type="text"
+                value={nuevasAlergias}
+                onChange={(e) => setNuevasAlergias(e.target.value)}
+                placeholder="Ej. Penicilina, látex..."
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-300 mb-1 font-bold">PRESCRIPCIONES PREVIAS:</label>
+              <input
+                type="text"
+                value={nuevasPrescripciones}
+                onChange={(e) => setNuevasPrescripciones(e.target.value)}
+                placeholder="Medicamentos actuales"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-300 mb-1 font-bold">CONTRAINDICACIONES:</label>
+              <input
+                type="text"
+                value={nuevasContraindicaciones}
+                onChange={(e) => setNuevasContraindicaciones(e.target.value)}
+                placeholder="Movimientos a evitar"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+            <div className="lg:col-span-3">
+              <label className="block text-xs text-slate-300 mb-1 font-bold">COMENTARIOS ADICIONALES:</label>
+              <textarea
+                value={nuevosComentarios}
+                onChange={(e) => setNuevosComentarios(e.target.value)}
+                placeholder="Observaciones de conducta, acompañantes..."
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-emerald-500 resize-none h-20"
               />
             </div>
           </div>
@@ -680,15 +798,36 @@ export default function DoctorView() {
           {/* 6. REVISAR HISTORIAL CARDEX Y OPINIONES DEL PACIENTE */}
           <div className="space-y-6">
             {/* Historial Cardex */}
-            <div className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl shadow-xl space-y-4">
-              <div className="flex justify-between items-center">
+            <div id="historia-clinica-pdf" className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl shadow-xl space-y-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h3 className="text-xl font-extrabold text-blue-300 flex items-center gap-2">
                   📋 Historial Clínico (Cardex)
                 </h3>
-                <span className="text-xs bg-slate-800 px-3 py-1 rounded-full text-slate-400 font-bold">
-                  {cardex.length} registros
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs bg-slate-800 px-3 py-1 rounded-full text-slate-400 font-bold">
+                    {cardex.length} registros
+                  </span>
+                  <button 
+                    onClick={descargarPDF} 
+                    className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-xl font-bold text-xs transition flex items-center gap-1 shadow-md cursor-pointer"
+                  >
+                    ⬇️ Descargar PDF
+                  </button>
+                </div>
               </div>
+
+              {/* Datos Médicos del Paciente */}
+              {paciente && (
+                <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50 space-y-2 mb-4 text-xs text-slate-300">
+                  <h4 className="font-bold text-white mb-2 text-sm uppercase">Perfil Médico del Paciente</h4>
+                  <p><strong className="text-blue-300">Nombre:</strong> {paciente.nombre} | <strong className="text-blue-300">ID/Cédula:</strong> {paciente.identificacion || 'N/A'}</p>
+                  <p><strong className="text-blue-300">Datos Generales:</strong> {paciente.datos_medicos_generales || 'Ninguno registrado'}</p>
+                  <p><strong className="text-blue-300">Alergias:</strong> {paciente.alergias || 'Ninguna registrada'}</p>
+                  <p><strong className="text-blue-300">Prescripciones:</strong> {paciente.prescripciones_previas || 'Ninguna'}</p>
+                  <p><strong className="text-blue-300">Contraindicaciones:</strong> {paciente.contraindicaciones || 'Ninguna'}</p>
+                  <p><strong className="text-blue-300">Comentarios:</strong> {paciente.comentarios || 'Sin observaciones'}</p>
+                </div>
+              )}
 
               {/* Buscador en el historial */}
               <input
@@ -780,6 +919,23 @@ export default function DoctorView() {
                 <span className="text-2xl">📈</span>
               </div>
               <span className="text-xs text-indigo-300 mt-2 block">Cumplimiento terapéutico</span>
+            </div>
+          </div>
+
+          {/* Gráfico de Adherencia (Recharts) */}
+          <div className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl shadow-xl space-y-4">
+            <h3 className="text-xl font-extrabold text-indigo-400">📈 Gráfico de Adherencia por Paciente</h3>
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dashboardData.pacientes} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                  <XAxis dataKey="nombre" stroke="#64748b" tick={{ fontSize: 12 }} />
+                  <YAxis stroke="#64748b" tick={{ fontSize: 12 }} allowDecimals={false} />
+                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }} />
+                  <Bar dataKey="total_rutinas" name="Rutinas Asignadas" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="completadas" name="Rutinas Completadas" fill="#10b981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
