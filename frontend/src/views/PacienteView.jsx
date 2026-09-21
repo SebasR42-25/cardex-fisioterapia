@@ -18,6 +18,12 @@ export default function PacienteView() {
   const [comentarioFeedback, setComentarioFeedback] = useState("");
   const [feedbackEnviadoExito, setFeedbackEnviadoExito] = useState(false);
   const [historialFeedback, setHistorialFeedback] = useState([]);
+  const [notificacion, setNotificacion] = useState({ mensaje: '', tipo: '' }); // tipo: 'exito', 'error'
+
+  const mostrarNotificacion = (mensaje, tipo = 'exito') => {
+    setNotificacion({ mensaje, tipo });
+    setTimeout(() => setNotificacion({ mensaje: '', tipo: '' }), 4000);
+  };
 
   const videoPlayerRef = useRef(null);
 
@@ -79,16 +85,22 @@ export default function PacienteView() {
   const toggleCompletado = async (rutinaId, estadoActual) => {
     const nuevoEstado = !estadoActual;
 
-    const response = await fetch(`${API_URL}/rutinas/${rutinaId}/toggle`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ completado_hoy: nuevoEstado })
-    });
+    try {
+      const response = await fetch(`${API_URL}/rutinas/${rutinaId}/toggle`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completado_hoy: nuevoEstado })
+      });
 
-    if (response.ok) {
-      setRutinasAsignadas(prev => prev.map(r =>
-        r.id === rutinaId ? { ...r, completado_hoy: nuevoEstado } : r
-      ));
+      if (response.ok) {
+        setRutinasAsignadas(prev => prev.map(r =>
+          r.id === rutinaId ? { ...r, completado_hoy: nuevoEstado } : r
+        ));
+      } else {
+        mostrarNotificacion("Error al actualizar el progreso. Intenta de nuevo.", "error");
+      }
+    } catch (error) {
+      mostrarNotificacion("Error de conexión.", "error");
     }
   };
 
@@ -110,27 +122,33 @@ export default function PacienteView() {
     e.preventDefault();
     if (!comentarioFeedback.trim()) return;
 
-    const res = await fetch(`${API_URL}/pacientes/${id}/feedback`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sensacion_dolor: sensacionDolor,
-        comentario: comentarioFeedback.trim()
-      })
-    });
+    try {
+      const res = await fetch(`${API_URL}/pacientes/${id}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sensacion_dolor: sensacionDolor,
+          comentario: comentarioFeedback.trim()
+        })
+      });
 
-    if (res.ok) {
-      setFeedbackEnviadoExito(true);
-      setComentarioFeedback("");
-      setTimeout(() => setFeedbackEnviadoExito(false), 4000);
-      const updatedFb = await fetch(`${API_URL}/pacientes/${id}/feedback`).then(r => r.json());
-      setHistorialFeedback(Array.isArray(updatedFb) ? updatedFb : []);
+      if (res.ok) {
+        setFeedbackEnviadoExito(true);
+        setComentarioFeedback("");
+        setTimeout(() => setFeedbackEnviadoExito(false), 4000);
+        const updatedFb = await fetch(`${API_URL}/pacientes/${id}/feedback`).then(r => r.json());
+        setHistorialFeedback(Array.isArray(updatedFb) ? updatedFb : []);
+      } else {
+        mostrarNotificacion("Error al enviar el mensaje al doctor.", "error");
+      }
+    } catch (error) {
+      mostrarNotificacion("Problema de red al enviar el mensaje.", "error");
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-amber-50 text-slate-900 flex items-center justify-center text-xl font-bold">
+      <div className="min-h-screen bg-blue-50 text-slate-900 flex items-center justify-center text-xl font-bold">
         Cargando tus ejercicios y expediente... 🔄
       </div>
     );
@@ -147,11 +165,19 @@ export default function PacienteView() {
   const strokeDashoffset = 125.6 - (125.6 * porcentajeProgreso) / 100;
 
   return (
-    <div className="min-h-screen w-full bg-amber-50 text-slate-800 font-sans p-4 sm:p-6 md:p-12 pb-28 flex flex-col items-center">
+    <div className="min-h-screen w-full bg-blue-50 text-slate-800 font-sans p-4 sm:p-6 md:p-12 pb-28 flex flex-col items-center">
+      {/* Notificación Flotante */}
+      {notificacion.mensaje && (
+        <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-xl shadow-2xl font-bold flex items-center gap-2 animate-in slide-in-from-top-4 ${notificacion.tipo === 'error' ? 'bg-red-100 text-red-800 border border-red-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}`}>
+          <span>{notificacion.tipo === 'error' ? '❌' : '✅'}</span>
+          {notificacion.mensaje}
+        </div>
+      )}
+      
       <div className="w-full max-w-4xl space-y-6">
 
         {/* Barra superior de navegación */}
-        <div className="flex justify-between items-center bg-white/60 border border-amber-200 px-4 py-2.5 rounded-2xl">
+        <div className="flex justify-between items-center bg-white/60 border border-teal-200 px-4 py-2.5 rounded-2xl">
           <Link
             to="/"
             className="text-xs text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5 font-semibold"
@@ -160,18 +186,18 @@ export default function PacienteView() {
           </Link>
           <Link
             to="/doctor"
-            className="text-xs bg-amber-100/80 hover:bg-blue-900 border border-amber-300 text-amber-800 px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1"
+            className="text-xs bg-teal-100/80 hover:bg-blue-900 border border-teal-300 text-teal-800 px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1"
           >
             <span>👩‍⚕️</span> Ir al Portal Médico
           </Link>
         </div>
 
         {/* Encabezado Accesible */}
-        <header className="bg-white border border-amber-200 p-6 sm:p-8 rounded-3xl shadow-2xl space-y-3 text-center md:text-left flex flex-col md:flex-row justify-between items-center gap-4">
+        <header className="bg-white border border-teal-200 p-6 sm:p-8 rounded-3xl shadow-2xl space-y-3 text-center md:text-left flex flex-col md:flex-row justify-between items-center gap-4">
           <div>
             <div className="flex items-center justify-center md:justify-start gap-2">
               <span className="text-3xl">👋</span>
-              <h1 className="text-3xl md:text-4xl font-extrabold text-amber-700 tracking-tight">
+              <h1 className="text-3xl md:text-4xl font-extrabold text-teal-700 tracking-tight">
                 Hola, {paciente ? paciente.nombre : `Paciente #${id}`}
               </h1>
             </div>
@@ -180,25 +206,25 @@ export default function PacienteView() {
             </p>
           </div>
 
-          <div className="bg-amber-100/80 border border-amber-300/80 px-5 py-4 rounded-3xl text-center flex items-center gap-4 shadow-sm">
+          <div className="bg-teal-100/80 border border-teal-300/80 px-5 py-4 rounded-3xl text-center flex items-center gap-4 shadow-sm">
             {/* Barra Circular SVG */}
             <div className="relative w-16 h-16 flex items-center justify-center">
               <svg className="w-16 h-16 transform -rotate-90">
-                <circle cx="32" cy="32" r="20" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-amber-200" />
+                <circle cx="32" cy="32" r="20" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-teal-200" />
                 <circle 
                   cx="32" cy="32" r="20" 
                   stroke="currentColor" strokeWidth="6" fill="transparent" 
                   strokeDasharray="125.6" 
                   strokeDashoffset={strokeDashoffset} 
-                  className="text-amber-600 transition-all duration-1000 ease-out" 
+                  className="text-teal-600 transition-all duration-1000 ease-out" 
                 />
               </svg>
-              <span className="absolute text-xs font-bold text-amber-900">{Math.round(porcentajeProgreso)}%</span>
+              <span className="absolute text-xs font-bold text-teal-900">{Math.round(porcentajeProgreso)}%</span>
             </div>
             <div className="text-left">
-              <span className="text-[11px] text-amber-800 font-bold block uppercase">Progreso y Racha:</span>
+              <span className="text-[11px] text-teal-800 font-bold block uppercase">Progreso y Racha:</span>
               <span className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
-                {rutinasHechas.length} / {rutinasAsignadas.length} <span className="text-amber-600 text-sm">Completados</span>
+                {rutinasHechas.length} / {rutinasAsignadas.length} <span className="text-teal-600 text-sm">Completados</span>
                 {porcentajeProgreso === 100 && <span className="text-xl" title="¡Racha mantenida!">🔥</span>}
               </span>
             </div>
@@ -207,17 +233,17 @@ export default function PacienteView() {
 
         {/* NOTAS Y RECOMENDACIONES DE EVOLUCIÓN DEJADAS POR SU MÉDICO */}
         {ultimaNotaCardex && (
-          <div className="bg-gradient-to-r from-blue-950/70 to-slate-900 border border-amber-400/40 p-6 rounded-3xl shadow-xl space-y-2">
+          <div className="bg-gradient-to-r from-white to-blue-50 border border-teal-400/40 p-6 rounded-3xl shadow-xl space-y-2">
             <div className="flex items-center gap-2">
               <span className="text-2xl">👨‍⚕️</span>
-              <h3 className="text-lg font-extrabold text-amber-800">
+              <h3 className="text-lg font-extrabold text-teal-800">
                 Indicaciones y Notas de tu Médico Tratante
               </h3>
             </div>
-            <p className="text-slate-800 text-sm sm:text-base leading-relaxed bg-white/80 p-4 rounded-2xl border border-amber-400/20 font-medium">
+            <p className="text-slate-800 text-sm sm:text-base leading-relaxed bg-white/80 p-4 rounded-2xl border border-teal-400/20 font-medium whitespace-pre-wrap break-words">
               "{ultimaNotaCardex.notas_clinicas}"
             </p>
-            <span className="text-[11px] text-amber-700 block text-right font-semibold">
+            <span className="text-[11px] text-teal-700 block text-right font-semibold">
               Última actualización: {ultimaNotaCardex.fecha ? new Date(ultimaNotaCardex.fecha).toLocaleDateString() : 'Reciente'}
             </span>
           </div>
@@ -225,10 +251,10 @@ export default function PacienteView() {
 
         {/* REPRODUCTOR DE VIDEO AMPLIO Y CENTRADO */}
         {videoActivo && (
-          <div ref={videoPlayerRef} className="bg-white border-2 border-amber-400/60 p-6 sm:p-8 rounded-3xl shadow-2xl space-y-4 animate-in fade-in">
+          <div ref={videoPlayerRef} className="bg-white border-2 border-teal-400/60 p-6 sm:p-8 rounded-3xl shadow-2xl space-y-4 animate-in fade-in">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
               <div>
-                <span className="text-xs text-amber-700 font-bold uppercase tracking-wider">Reproduciendo Video Interactivo:</span>
+                <span className="text-xs text-teal-700 font-bold uppercase tracking-wider">Reproduciendo Video Interactivo:</span>
                 <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900">{tituloVideoActivo}</h3>
               </div>
               <button
@@ -240,7 +266,7 @@ export default function PacienteView() {
             </div>
 
             {/* Frame Amplio de Video */}
-            <div className="w-full bg-black rounded-3xl overflow-hidden shadow-2xl flex justify-center border border-amber-300">
+            <div className="w-full bg-black rounded-3xl overflow-hidden shadow-2xl flex justify-center border border-teal-300">
               <video key={videoActivo} controls autoPlay className="w-full max-h-[550px] object-contain">
                 <source src={videoActivo} type="video/mp4" />
                 Tu navegador no soporta la reproducción directa de este video.
@@ -258,7 +284,7 @@ export default function PacienteView() {
             <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
               <span>⏱️</span> Módulo 1: Ejercicios Pendientes para Hoy
             </h2>
-            <span className="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full font-bold">
+            <span className="text-xs bg-blue-500/20 text-teal-300 border border-teal-500/30 px-3 py-1 rounded-full font-bold">
               {rutinasPendientes.length} por realizar
             </span>
           </div>
@@ -266,7 +292,7 @@ export default function PacienteView() {
           {rutinasPendientes.length === 0 ? (
             <div className="bg-white/60 border border-emerald-500/30 p-8 rounded-3xl text-center space-y-2">
               <span className="text-4xl">🎉</span>
-              <h4 className="text-lg font-bold text-emerald-400">¡Excelente trabajo!</h4>
+              <h4 className="text-lg font-bold text-teal-700">¡Excelente trabajo!</h4>
               <p className="text-slate-700 text-sm">Has completado todos tus ejercicios asignados para el día de hoy.</p>
             </div>
           ) : (
@@ -280,42 +306,42 @@ export default function PacienteView() {
                 );
 
                 return (
-                  <div key={rutina.id} className="bg-white border border-amber-500/50 p-6 rounded-3xl shadow-xl flex flex-col justify-between space-y-4">
+                  <div key={rutina.id} className="bg-white border border-teal-500/50 p-6 rounded-3xl shadow-xl flex flex-col justify-between space-y-4">
                     <div className="space-y-3">
                       <div className="flex justify-between items-start gap-3">
                         <h3 className="text-xl font-extrabold text-slate-900 leading-snug">{titulo}</h3>
-                        <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-extrabold whitespace-nowrap">
+                        <span className="bg-blue-500/20 text-teal-400 border border-teal-500/30 px-3 py-1 rounded-full text-xs font-extrabold whitespace-nowrap">
                           Pendiente ⏱️
                         </span>
                       </div>
 
                       {/* Pequeña Descripción Instructiva */}
-                      <p className="text-slate-700 text-sm italic bg-amber-100/80 p-3.5 rounded-2xl border border-amber-300/60 leading-relaxed">
+                      <p className="text-slate-700 text-sm italic bg-teal-100/80 p-3.5 rounded-2xl border border-teal-300/60 leading-relaxed">
                         {descripcion}
                       </p>
 
                       <p className="text-slate-700 text-sm font-semibold">
-                        <strong className="text-amber-700">Frecuencia / Repeticiones:</strong> {rutina.frecuencia}
+                        <strong className="text-teal-700">Frecuencia / Repeticiones:</strong> {rutina.frecuencia}
                       </p>
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-3 pt-2">
                       <button
                         onClick={() => leerInstrucciones(`Ejercicio: ${titulo}. Descripción: ${descripcion}. Debes realizar: ${rutina.frecuencia}.`)}
-                        className="py-3.5 px-4 rounded-2xl text-sm font-extrabold bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 transition shadow-sm cursor-pointer flex items-center justify-center gap-2"
+                        className="py-3.5 px-4 rounded-2xl text-sm font-extrabold bg-teal-100 hover:bg-teal-200 text-teal-900 border border-teal-300 transition shadow-sm cursor-pointer flex items-center justify-center gap-2"
                         title="Escuchar instrucciones en voz alta"
                       >
                         🔊 Escuchar
                       </button>
                       <button
                         onClick={() => reproducirVideo(rutina)}
-                        className="flex-1 py-3.5 px-4 rounded-2xl text-sm font-extrabold bg-amber-500 hover:bg-amber-400 text-slate-900 transition shadow-lg cursor-pointer flex items-center justify-center gap-2"
+                        className="flex-1 py-3.5 px-4 rounded-2xl text-sm font-extrabold bg-blue-500 hover:bg-teal-400 text-slate-900 transition shadow-lg cursor-pointer flex items-center justify-center gap-2"
                       >
                         ▶ Ver Video
                       </button>
                       <button
                         onClick={() => toggleCompletado(rutina.id, rutina.completado_hoy)}
-                        className="py-3.5 px-5 rounded-2xl text-sm font-extrabold bg-emerald-600 hover:bg-emerald-500 text-slate-900 transition shadow-lg cursor-pointer flex items-center justify-center gap-1.5"
+                        className="py-3.5 px-5 rounded-2xl text-sm font-extrabold bg-blue-600 hover:bg-blue-700 text-slate-900 transition shadow-lg cursor-pointer flex items-center justify-center gap-1.5"
                       >
                         ✓ Marcar Hecho
                       </button>
@@ -329,9 +355,9 @@ export default function PacienteView() {
 
         {/* MÓDULO 2: EJERCICIOS COMPLETADOS */}
         {rutinasHechas.length > 0 && (
-          <section className="space-y-4 pt-4 border-t border-amber-200">
+          <section className="space-y-4 pt-4 border-t border-teal-200">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-extrabold text-emerald-400 flex items-center gap-2">
+              <h2 className="text-2xl font-extrabold text-teal-700 flex items-center gap-2">
                 <span>✅</span> Módulo 2: Ejercicios Realizados Hoy
               </h2>
               <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-full font-bold">
@@ -353,12 +379,12 @@ export default function PacienteView() {
                     <div className="space-y-3">
                       <div className="flex justify-between items-start gap-3">
                         <h3 className="text-xl font-extrabold text-slate-800">{titulo}</h3>
-                        <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-extrabold whitespace-nowrap">
+                        <span className="bg-emerald-500/20 text-teal-700 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-extrabold whitespace-nowrap">
                           ¡Completado! ✅
                         </span>
                       </div>
 
-                      <p className="text-slate-600 text-xs italic bg-amber-100/50 p-3 rounded-2xl border border-amber-300/40 leading-relaxed">
+                      <p className="text-slate-600 text-xs italic bg-teal-100/50 p-3 rounded-2xl border border-teal-300/40 leading-relaxed">
                         {descripcion}
                       </p>
 
@@ -370,13 +396,13 @@ export default function PacienteView() {
                     <div className="flex flex-col sm:flex-row gap-3 pt-2">
                       <button
                         onClick={() => reproducirVideo(rutina)}
-                        className="flex-1 py-3 px-4 rounded-2xl text-xs sm:text-sm font-bold bg-amber-100 hover:bg-slate-700 text-amber-800 border border-amber-300 transition shadow cursor-pointer flex items-center justify-center gap-1.5"
+                        className="flex-1 py-3 px-4 rounded-2xl text-xs sm:text-sm font-bold bg-teal-100 hover:bg-slate-700 text-teal-800 border border-teal-300 transition shadow cursor-pointer flex items-center justify-center gap-1.5"
                       >
                         ▶ Ver de Nuevo
                       </button>
                       <button
                         onClick={() => toggleCompletado(rutina.id, rutina.completado_hoy)}
-                        className="py-3 px-5 rounded-2xl text-xs sm:text-sm font-bold bg-amber-100 hover:bg-slate-700 text-slate-600 border border-amber-300 transition shadow cursor-pointer"
+                        className="py-3 px-5 rounded-2xl text-xs sm:text-sm font-bold bg-teal-100 hover:bg-slate-700 text-slate-600 border border-teal-300 transition shadow cursor-pointer"
                       >
                         Desmarcar
                       </button>
@@ -389,7 +415,7 @@ export default function PacienteView() {
         )}
 
         {/* SECCIÓN DE OPINIONES Y MENSAJES PARA EL DOCTOR */}
-        <section className="bg-white border border-amber-200 p-6 sm:p-8 rounded-3xl shadow-2xl space-y-6">
+        <section className="bg-white border border-teal-200 p-6 sm:p-8 rounded-3xl shadow-2xl space-y-6">
           <div className="flex items-center gap-3">
             <span className="text-3xl">💬</span>
             <div>
@@ -417,8 +443,8 @@ export default function PacienteView() {
                     onClick={() => setSensacionDolor(opcion)}
                     className={`p-3 rounded-2xl text-xs sm:text-sm font-bold border transition cursor-pointer flex items-center justify-center ${
                       sensacionDolor === opcion
-                        ? 'bg-amber-500 border-blue-400 text-slate-900 shadow-lg'
-                        : 'bg-amber-100 border-amber-300 text-slate-700 hover:bg-slate-700'
+                        ? 'bg-blue-500 border-blue-400 text-slate-900 shadow-lg'
+                        : 'bg-teal-100 border-teal-300 text-slate-700 hover:bg-slate-700'
                     }`}
                   >
                     {opcion}
@@ -434,7 +460,7 @@ export default function PacienteView() {
                 value={comentarioFeedback}
                 onChange={(e) => setComentarioFeedback(e.target.value)}
                 placeholder="Ej. 'Me dolió un poco al final de la tercera repetición', 'Hoy sentí mayor facilidad para caminar'..."
-                className="w-full bg-amber-100 border border-amber-300 rounded-2xl p-4 text-slate-900 text-sm focus:outline-none focus:border-amber-400 placeholder:text-slate-500"
+                className="w-full bg-teal-100 border border-teal-300 rounded-2xl p-4 text-slate-900 text-sm focus:outline-none focus:border-teal-400 placeholder:text-slate-500"
                 required
               ></textarea>
             </div>
@@ -449,13 +475,13 @@ export default function PacienteView() {
 
           {/* Historial de Mensajes Enviados */}
           {historialFeedback.length > 0 && (
-            <div className="pt-4 border-t border-amber-200 space-y-3">
+            <div className="pt-4 border-t border-teal-200 space-y-3">
               <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider">Tus Mensajes Enviados Recientes:</h4>
               <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
                 {historialFeedback.map((fb, idx) => (
-                  <div key={idx} className="bg-amber-100/60 border border-amber-300/50 p-3 rounded-xl text-xs space-y-1">
+                  <div key={idx} className="bg-teal-100/60 border border-teal-300/50 p-3 rounded-xl text-xs space-y-1">
                     <div className="flex justify-between items-center">
-                      <span className="font-bold text-amber-400">{fb.sensacion_dolor}</span>
+                      <span className="font-bold text-teal-400">{fb.sensacion_dolor}</span>
                       <span className="text-[10px] text-slate-500">{fb.fecha ? new Date(fb.fecha).toLocaleDateString() : 'Hoy'}</span>
                     </div>
                     <p className="text-slate-700">"{fb.comentario}"</p>

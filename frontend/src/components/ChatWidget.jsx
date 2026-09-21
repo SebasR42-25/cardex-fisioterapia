@@ -115,9 +115,9 @@ export default function ChatWidget() {
     <div className="fixed bottom-6 right-6 z-50 font-sans">
       {/* Ventana de Chat */}
       {abierto && (
-        <div className="bg-slate-900 border border-slate-700 w-[90vw] sm:w-[380px] h-[520px] rounded-3xl shadow-2xl flex flex-col overflow-hidden mb-3 animate-in fade-in slide-in-from-bottom-5">
+        <div className="bg-white border border-slate-300 w-[90vw] sm:w-[380px] h-[520px] rounded-3xl shadow-2xl flex flex-col overflow-hidden mb-3 animate-in fade-in slide-in-from-bottom-5">
           {/* Header del Chat */}
-          <div className="bg-gradient-to-r from-blue-700 to-indigo-800 p-4 text-white flex justify-between items-center shadow">
+          <div className="bg-gradient-to-r from-blue-700 to-indigo-800 p-4 text-slate-800 flex justify-between items-center shadow">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-blue-900/80 border border-blue-400 flex items-center justify-center text-xl shadow-inner">
                 🤖
@@ -132,7 +132,7 @@ export default function ChatWidget() {
             </div>
             <button
               onClick={() => setAbierto(false)}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm font-bold transition cursor-pointer"
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-800 flex items-center justify-center text-sm font-bold transition cursor-pointer"
               title="Cerrar chat"
             >
               ✕
@@ -140,7 +140,7 @@ export default function ChatWidget() {
           </div>
 
           {/* Área de Mensajes */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-950/80">
+          <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/80">
             {mensajes.map((msg) => (
               <div
                 key={msg.id}
@@ -150,7 +150,7 @@ export default function ChatWidget() {
                   className={`max-w-[85%] p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
                     msg.remitente === 'usuario'
                       ? 'bg-blue-600 text-white rounded-br-none shadow-md font-medium'
-                      : 'bg-slate-800 border border-slate-700/80 text-slate-100 rounded-bl-none shadow'
+                      : 'bg-slate-100 border border-slate-300/80 text-slate-800 rounded-bl-none shadow'
                   }`}
                 >
                   <p className="whitespace-pre-line">{msg.texto}</p>
@@ -160,7 +160,7 @@ export default function ChatWidget() {
             ))}
 
             {escribiendo && (
-              <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-800/60 p-2.5 rounded-2xl w-24 border border-slate-700/50">
+              <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-100/60 p-2.5 rounded-2xl w-24 border border-slate-300/50">
                 <span className="animate-bounce">●</span>
                 <span className="animate-bounce [animation-delay:0.2s]">●</span>
                 <span className="animate-bounce [animation-delay:0.4s]">●</span>
@@ -170,12 +170,12 @@ export default function ChatWidget() {
           </div>
 
           {/* Chips de Preguntas Frecuentes */}
-          <div className="px-3 py-2 bg-slate-900 border-t border-slate-800 overflow-x-auto flex gap-1.5 scrollbar-thin">
+          <div className="px-3 py-2 bg-white border-t border-slate-200 overflow-x-auto flex gap-1.5 scrollbar-thin">
             {chipsPreguntas.map((chip, idx) => (
               <button
                 key={idx}
                 onClick={() => enviarMensaje(chip.texto)}
-                className="whitespace-nowrap text-[11px] font-semibold bg-slate-800 hover:bg-blue-600 hover:text-white text-slate-300 px-3 py-1.5 rounded-full border border-slate-700 transition shadow-sm cursor-pointer"
+                className="whitespace-nowrap text-[11px] font-semibold bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-600 px-3 py-1.5 rounded-full border border-slate-300 transition shadow-sm cursor-pointer"
               >
                 {chip.label}
               </button>
@@ -183,13 +183,13 @@ export default function ChatWidget() {
           </div>
 
           {/* Input de Envío */}
-          <form onSubmit={handleSubmit} className="p-3 bg-slate-900 border-t border-slate-800 flex gap-2">
+          <form onSubmit={handleSubmit} className="p-3 bg-white border-t border-slate-200 flex gap-2">
             <input
               type="text"
               value={inputTexto}
               onChange={(e) => setInputTexto(e.target.value)}
               placeholder="Escribe tu duda aquí..."
-              className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-blue-500 placeholder:text-slate-500"
+              className="flex-1 bg-slate-100 border border-slate-300 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-blue-500 placeholder:text-slate-500"
             />
             <button
               type="submit"
@@ -204,7 +204,7 @@ export default function ChatWidget() {
       {/* Botón Flotante de Activación */}
       <button
         onClick={() => setAbierto(!abierto)}
-        className="flex items-center gap-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold px-5 py-3.5 rounded-full shadow-2xl border-2 border-blue-400/40 transition hover:scale-105 cursor-pointer"
+        className="flex items-center gap-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-slate-800 font-extrabold px-5 py-3.5 rounded-full shadow-2xl border-2 border-blue-400/40 transition hover:scale-105 cursor-pointer"
       >
         <span className="text-xl">💬</span>
         <span className="text-sm tracking-wide">{abierto ? 'Cerrar Chat' : 'Ayuda / Chat Fisioterapia'}</span>
