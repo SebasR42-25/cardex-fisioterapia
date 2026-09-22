@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { API_URL } from '../config';
 
@@ -98,7 +98,7 @@ export default function DoctorView() {
           tableRows.push(rowData);
         });
 
-        doc.autoTable({
+        autoTable(doc, {
           startY: finalY,
           head: [tableColumn],
           body: tableRows,

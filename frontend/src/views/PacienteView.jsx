@@ -223,9 +223,9 @@ export default function PacienteView() {
             </div>
             <div className="text-left">
               <span className="text-[11px] text-teal-800 font-bold block uppercase">Progreso y Racha:</span>
-              <span className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
-                {rutinasHechas.length} / {rutinasAsignadas.length} <span className="text-teal-600 text-sm">Completados</span>
-                {porcentajeProgreso === 100 && <span className="text-xl" title="¡Racha mantenida!">🔥</span>}
+              <span className="text-lg font-extrabold text-slate-900 block mt-1">
+                {rutinasHechas.length} / {rutinasAsignadas.length} <span className="text-teal-600 text-sm ml-1">Completados</span>
+                {porcentajeProgreso === 100 && <span className="text-xl ml-2 inline-block" title="¡Racha mantenida!">🔥</span>}
               </span>
             </div>
           </div>
