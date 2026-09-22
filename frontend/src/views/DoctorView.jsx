@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import html2pdf from 'html2pdf.js';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { API_URL } from '../config';
 
@@ -55,36 +56,74 @@ export default function DoctorView() {
   const [isPdfLoading, setIsPdfLoading] = useState(false);
 
   const descargarPDF = () => {
-    const element = document.getElementById('historia-clinica-pdf');
-    if (!element) return;
-    
-    // 1. Cambiamos el estado para que React quite el scroll y muestre "Generando..."
+    if (!paciente) {
+      alert("No hay datos del paciente seleccionados.");
+      return;
+    }
     setIsPdfLoading(true);
-    
-    // 2. Esperamos a que React re-renderice y el DOM se expanda completamente
-    setTimeout(() => {
-      const opt = {
-        margin:       10,
-        filename:     `Historia_Clinica_${paciente?.nombre || 'Paciente'}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { 
-          scale: 2,
-          // Ignorar botones e inputs en el PDF impreso
-          ignoreElements: (node) => node.tagName === 'BUTTON' || node.tagName === 'INPUT' 
-        },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
+
+    try {
+      const doc = new jsPDF();
       
-      html2pdf().from(element).set(opt).save()
-        .then(() => {
-          setIsPdfLoading(false);
-        })
-        .catch((error) => {
-          console.error("Error al generar PDF:", error);
-          alert("Hubo un error al generar el documento PDF.");
-          setIsPdfLoading(false);
+      doc.setFontSize(18);
+      doc.setTextColor(30, 64, 175);
+      doc.text("Historial Clínico (Cardex)", 14, 22);
+
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Paciente: ${paciente.nombre}`, 14, 32);
+      doc.text(`ID/Cédula: ${paciente.identificacion || 'N/A'}`, 14, 38);
+      doc.text(`Datos Generales: ${paciente.datos_medicos_generales || 'N/A'}`, 14, 44);
+      doc.text(`Alergias: ${paciente.alergias || 'N/A'}`, 14, 50);
+      doc.text(`Prescripciones: ${paciente.prescripciones_previas || 'N/A'}`, 14, 56);
+      doc.text(`Contraindicaciones: ${paciente.contraindicaciones || 'N/A'}`, 14, 62);
+      
+      let finalY = 70;
+      
+      if (cardex && cardex.length > 0) {
+        doc.setFontSize(14);
+        doc.setTextColor(30, 64, 175);
+        doc.text("Registros de Evolución", 14, finalY);
+        finalY += 6;
+
+        const tableColumn = ["Fecha", "Consulta #", "Notas Clínicas"];
+        const tableRows = [];
+
+        cardex.forEach((item, index) => {
+          const rowData = [
+            item.fecha ? new Date(item.fecha).toLocaleDateString() : 'Hoy',
+            item.id || index + 1,
+            item.notas_clinicas
+          ];
+          tableRows.push(rowData);
         });
-    }, 400); // Dar 400ms al navegador para recalcular el tamaño sin scroll
+
+        doc.autoTable({
+          startY: finalY,
+          head: [tableColumn],
+          body: tableRows,
+          theme: 'striped',
+          headStyles: { fillColor: [30, 64, 175] },
+          styles: { fontSize: 10, cellPadding: 3, overflow: 'linebreak' },
+          columnStyles: { 
+            0: { cellWidth: 30 },
+            1: { cellWidth: 25 },
+            2: { cellWidth: 'auto' }
+          }
+        });
+      } else {
+        doc.setFontSize(12);
+        doc.setTextColor(100, 100, 100);
+        doc.text("No hay registros en el Cardex para este paciente.", 14, finalY);
+      }
+
+      doc.save(`Cardex_${paciente.nombre || 'Paciente'}.pdf`);
+    } catch (error) {
+      console.error("Error al generar PDF:", error);
+      alert("Hubo un error al generar el documento PDF.");
+    } finally {
+      setIsPdfLoading(false);
+    }
   };
 
   // Estados Formulario Nuevo Video Interactivo

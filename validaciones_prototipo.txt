@@ -1,0 +1,119 @@
+================================================================================
+REPORTE DE VIGILANCIA Y VALIDACIONES DEL PROTOTIPO - CARDEX FISIOTERAPIA
+================================================================================
+
+A continuación se detallan los comentarios y hallazgos recopilados durante las
+fases de validación del prototipo actual del sistema Cardex. Este feedback ha
+sido fundamental para guiar y justificar las decisiones de diseño, usabilidad,
+y arquitectura de la información.
+
+--------------------------------------------------------------------------------
+1. MÉDICOS GENERALES (2 participantes)
+--------------------------------------------------------------------------------
+Comentario 1 (Dr. A):
+"Necesito que la sección de 'Alergias' y 'Contraindicaciones' esté siempre
+visible en la cabecera del perfil del paciente, preferiblemente en un color
+rojo o naranja llamativo para que no pase desapercibida en una emergencia."
+-> Decisión de diseño: Implementación de banners persistentes (sticky headers)
+con colores de alerta semántica alta (Rojo/Naranja) para información crítica.
+
+Comentario 2 (Dra. B):
+"El historial de medicamentos actuales debe estar en una lista limpia y sin
+abreviaturas confusas. La tipografía tiene que ser lo suficientemente grande
+para leerla rápido en una tablet mientras paso visita de pie."
+-> Decisión de diseño: Aumento del tamaño de fuente base a 16px para listas y
+uso de diseño responsivo enfocado en tablets (Touch-friendly).
+
+--------------------------------------------------------------------------------
+2. PSICÓLOGOS (2 participantes)
+--------------------------------------------------------------------------------
+Comentario 1 (Psic. C):
+"Los colores de la interfaz general deberían ser tonos pastel (azules o verdes
+suaves) en lugar de blanco clínico brillante. Esto reduce la fatiga visual del
+personal y resulta menos intimidante si el paciente llega a ver la pantalla."
+-> Decisión de diseño: Adopción de una paleta de colores en "Modo Claro" con
+fondos en tonos gris muy claro o azul apastelado, minimizando el contraste
+extremo del blanco puro.
+
+Comentario 2 (Psic. D):
+"Es vital tener un apartado para 'Notas de Evolución Emocional' separado de
+los diagnósticos físicos, con una estructura de texto libre pero con etiquetas
+(tags) predefinidas para buscar rápidamente patrones de comportamiento."
+-> Decisión de diseño: Creación de un módulo de notas estructurado con sistema
+de etiquetado por colores (p. ej. Amarillo para ansiedad, Azul para depresión).
+
+--------------------------------------------------------------------------------
+3. PERSONAS MAYORES (USUARIOS/PACIENTES) (2 participantes)
+--------------------------------------------------------------------------------
+Comentario 1 (Usuario E, 72 años):
+"Las letras en la aplicación que yo veo en mi teléfono son muy pequeñas.
+Necesitamos un botón bien grande para hacer la letra más grande y que haya
+mucho contraste. El fondo oscuro con letras blancas me ayuda a leer mejor."
+-> Decisión de diseño: Inclusión de un botón de accesibilidad para aumentar
+fuentes (A+) y soporte nativo para Alto Contraste / Modo Oscuro.
+
+Comentario 2 (Usuario F, 68 años):
+"No entiendo palabras médicas. Y los botones de 'Aceptar' y 'Cancelar' se ven
+casi iguales; deberían ser muy diferentes, uno verde grande y otro rojo,
+para no equivocarme."
+-> Decisión de diseño: Cambio de "copys" (textos) a lenguaje coloquial en la
+app de pacientes. Diferenciación drástica de botones primarios (sólidos, verdes)
+y botones secundarios/destructivos (bordes, rojos o grises).
+
+--------------------------------------------------------------------------------
+4. FISIOTERAPEUTAS (4 participantes)
+--------------------------------------------------------------------------------
+Comentario 1 (Fisio G):
+"En el Cardex de rehabilitación, un texto no es suficiente. Necesito esquemas
+del cuerpo humano (mapas de calor) donde pueda hacer clic y marcar la zona
+exacta de dolor."
+-> Decisión de diseño: Integración de un gráfico interactivo (Body Chart) SVG
+para mapeo visual de síntomas en lugar de solo campos de texto.
+
+Comentario 2 (Fisio H):
+"Los botones para registrar el nivel de dolor (del 1 al 10) deben ser grandes y
+fáciles de tocar, con código de colores (verde para 1, rojo oscuro para 10)
+para un registro rápido durante la sesión sin dejar de ver al paciente."
+-> Decisión de diseño: Interfaz de ingreso rápido con escala visual analógica
+por bloques de color expansivos (Touch Targets grandes).
+
+Comentario 3 (Fisio I):
+"Me gustaría que la estructura muestre gráficas de evolución de la movilidad.
+Ver una línea ascendente es más motivador para el paciente y más analítico
+para nosotros que una simple tabla llena de números."
+-> Decisión de diseño: Implementación de gráficas de líneas (Dashboards) para el
+seguimiento histórico de grados articulares y fuerza.
+
+Comentario 4 (Fisio J):
+"Para los ejercicios recomendados para casa, las palabras deben estar
+acompañadas de íconos o formas sencillas. Un pictograma ayuda a que el paciente
+recuerde la postura exacta."
+-> Decisión de diseño: Adición de una librería de iconos vectoriales que
+acompaña cada descripción de ejercicio terapéutico.
+
+--------------------------------------------------------------------------------
+5. DISEÑADOR UI/UX (1 participante)
+--------------------------------------------------------------------------------
+Comentario (Diseñador K):
+"Para mantener la consistencia visual y reducir la carga cognitiva al escanear
+tantos datos médicos, necesitamos unificar los bordes de todas las tarjetas
+(cards) usando esquinas redondeadas suaves (8px). La fuente debe ser Sans-Serif
+moderna (ej. Roboto o Inter) con un espaciado (padding) generoso que separe los
+bloques de información crítica."
+-> Decisión de diseño: Creación de un Sistema de Diseño (Design System) robusto,
+estandarizando radios de borde, jerarquía de tipografía, y uso de espacios en
+blanco (whitespace) como separadores en lugar de líneas duras.
+
+--------------------------------------------------------------------------------
+6. MBA EN DIRECCIÓN CORPORATIVA Y GESTIÓN EMPRESARIAL (1 participante)
+--------------------------------------------------------------------------------
+Comentario (Gerente L):
+"La estructura principal debe incorporar un 'Dashboard' administrativo con
+indicadores clave (KPIs) en la parte superior: sesiones completadas, tasa de
+cancelaciones y tiempos promedios de atención. Los colores aquí deben seguir un
+estilo 'semáforo' (Verde, Amarillo, Rojo) para que los coordinadores
+identifiquen cuellos de botella en la facturación o la clínica de un vistazo."
+-> Decisión de diseño: Diseño de una vista "Admin/Management" enfocada en la
+visualización de datos agregados (Data Viz) con semaforización condicional y
+exportación rápida para auditorías.
+================================================================================
