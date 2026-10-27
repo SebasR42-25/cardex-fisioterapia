@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { API_URL } from '../config';
 
@@ -19,6 +17,7 @@ export default function DoctorView() {
   const [feedbackPaciente, setFeedbackPaciente] = useState([]);
   const [mostrarQrModal, setMostrarQrModal] = useState(false);
   const [notificacion, setNotificacion] = useState({ mensaje: '', tipo: '' }); // tipo: 'exito', 'error'
+  const [rutinaGuardando, setRutinaGuardando] = useState(false);
 
   const mostrarNotificacion = (mensaje, tipo = 'exito') => {
     setNotificacion({ mensaje, tipo });
@@ -28,7 +27,9 @@ export default function DoctorView() {
   // Estados Catálogo de Ejercicios
   const ejerciciosCatalogoBase = [
     { id: 1, titulo: "Extensión de Rodilla", descripcion: "Ideal para fortalecer cuádriceps y recuperar movilidad articular tras cirugías o desgaste leve.", frecuenciaSugerida: "3 series de 10 repeticiones", url_video: "/videos/rodilla.mp4", zona_cuerpo: "Pierna" },
-    { id: 2, titulo: "Caminata Estática", descripcion: "Excelente para mejorar la resistencia cardiovascular de bajo impacto y activar la circulación en piernas.", frecuenciaSugerida: "5 minutos continuos", url_video: "/videos/caminata.mp4", zona_cuerpo: "General" }
+    { id: 2, titulo: "Caminata Estática", descripcion: "Excelente para mejorar la resistencia cardiovascular de bajo impacto y activar la circulación en piernas.", frecuenciaSugerida: "5 minutos continuos", url_video: "/videos/caminata.mp4", zona_cuerpo: "General" },
+    { id: 3, titulo: "Sentadilla Asistida", descripcion: "Video de demostración para revisar la postura y el recorrido con el profesional tratante.", frecuenciaSugerida: "Según indicación profesional", url_video: "/videos/sentadilla.mp4", zona_cuerpo: "Pierna" },
+    { id: 4, titulo: "Video de ejercicio", descripcion: "Video de demostración para revisar con el profesional tratante antes de asignarlo.", frecuenciaSugerida: "Según indicación profesional", url_video: "/videos/ejercicio-demostracion.mp4", zona_cuerpo: "General" }
   ];
   const [ejerciciosCatalogo, setEjerciciosCatalogo] = useState(ejerciciosCatalogoBase);
   const [selectedEjercicioId, setSelectedEjercicioId] = useState(1);
@@ -55,7 +56,7 @@ export default function DoctorView() {
 
   const [isPdfLoading, setIsPdfLoading] = useState(false);
 
-  const descargarPDF = () => {
+  const descargarPDF = async () => {
     if (!paciente) {
       alert("No hay datos del paciente seleccionados.");
       return;
@@ -63,6 +64,10 @@ export default function DoctorView() {
     setIsPdfLoading(true);
 
     try {
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable')
+      ]);
       const doc = new jsPDF();
       
       doc.setFontSize(18);
@@ -159,7 +164,7 @@ export default function DoctorView() {
             id: item.id,
             titulo: item.titulo,
             descripcion: item.descripcion,
-            frecuenciaSugerida: item.frecuenciaSugerida || (item.id === 1 ? "3 series de 10 repeticiones" : "5 minutos continuos"),
+            frecuenciaSugerida: item.frecuenciaSugerida || (item.id === 1 ? "3 series de 10 repeticiones" : item.id === 2 ? "5 minutos continuos" : "Según indicación profesional"),
             url_video: item.url_video || "/videos/rodilla.mp4",
             zona_cuerpo: item.zona_cuerpo || "General"
           }));
@@ -188,25 +193,23 @@ export default function DoctorView() {
   useEffect(() => {
     if (!pacienteIdActivo) return;
 
-    fetch(`${API_URL}/pacientes/${pacienteIdActivo}`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => setPaciente(data))
-      .catch(() => setPaciente(null));
-
-    fetch(`${API_URL}/pacientes/${pacienteIdActivo}/rutinas`)
-      .then(res => res.ok ? res.json() : [])
-      .then(data => setRutinasHoy(Array.isArray(data) ? data : []))
-      .catch(() => setRutinasHoy([]));
-
-    fetch(`${API_URL}/pacientes/${pacienteIdActivo}/cardex`)
-      .then(res => res.ok ? res.json() : [])
-      .then(data => setCardex(Array.isArray(data) ? data : []))
-      .catch(() => setCardex([]));
-
-    fetch(`${API_URL}/pacientes/${pacienteIdActivo}/feedback`)
-      .then(res => res.ok ? res.json() : [])
-      .then(data => setFeedbackPaciente(Array.isArray(data) ? data : []))
-      .catch(() => setFeedbackPaciente([]));
+    let activo = true;
+    const cargarExpediente = async () => {
+      const [perfil, rutinas, notas, feedback] = await Promise.all([
+        fetch(`${API_URL}/pacientes/${pacienteIdActivo}`).then(res => res.ok ? res.json() : null).catch(() => null),
+        fetch(`${API_URL}/pacientes/${pacienteIdActivo}/rutinas`).then(res => res.ok ? res.json() : []).catch(() => []),
+        fetch(`${API_URL}/pacientes/${pacienteIdActivo}/cardex`).then(res => res.ok ? res.json() : []).catch(() => []),
+        fetch(`${API_URL}/pacientes/${pacienteIdActivo}/feedback`).then(res => res.ok ? res.json() : []).catch(() => [])
+      ]);
+      if (!activo) return;
+      setPaciente(perfil);
+      setRutinasHoy(Array.isArray(rutinas) ? rutinas : []);
+      setCardex(Array.isArray(notas) ? notas : []);
+      setFeedbackPaciente(Array.isArray(feedback) ? feedback : []);
+    };
+    cargarExpediente();
+    const timer = window.setInterval(cargarExpediente, 4000);
+    return () => { activo = false; window.clearInterval(timer); };
   }, [pacienteIdActivo]);
 
   // Manejo de búsqueda y selección de paciente
@@ -237,13 +240,18 @@ export default function DoctorView() {
   // 1. REGISTRAR EVOLUCIÓN
   const guardarEvolucionCompleta = async (e) => {
     e.preventDefault();
-    const notaFormateada = `[Estado: ${estadoBanner}] [Dolor: ${nivelDolor}/10] [Movilidad: ${rangoMovilidad}] - ${observaciones}`;
+    const usuario = JSON.parse(localStorage.getItem('cardex_user') || 'null');
+    if (!usuario?.id || !observaciones.trim()) {
+      mostrarNotificacion("Escribe la nota y vuelve a ingresar al portal médico.", "error");
+      return;
+    }
+    const notaFormateada = `[Estado: ${estadoBanner}] [Dolor: ${nivelDolor}/10] [Movilidad: ${rangoMovilidad}] - ${observaciones.trim()}`;
 
     try {
       const res = await fetch(`${API_URL}/pacientes/${pacienteIdActivo}/cardex`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ doctor_id: 1, notas_clinicas: notaFormateada })
+        body: JSON.stringify({ doctor_id: usuario.id, notas_clinicas: notaFormateada })
       });
 
       if (res.ok) {
@@ -254,7 +262,7 @@ export default function DoctorView() {
       } else {
         mostrarNotificacion("Error al guardar la evolución. Verifica la conexión.", "error");
       }
-    } catch (error) {
+    } catch {
       mostrarNotificacion("Error de red al guardar la evolución.", "error");
     }
   };
@@ -262,6 +270,7 @@ export default function DoctorView() {
   // 3. ASIGNAR EJERCICIO
   const asignarEjercicioDirecto = async (ejercicio, frecuencia) => {
     if (!ejercicio) return;
+    setRutinaGuardando(true);
     try {
       const res = await fetch(`${API_URL}/pacientes/${pacienteIdActivo}/asignar-rutina`, {
         method: 'POST',
@@ -280,8 +289,10 @@ export default function DoctorView() {
       } else {
         mostrarNotificacion("Error al asignar la rutina.", "error");
       }
-    } catch (error) {
+    } catch {
       mostrarNotificacion("Error de conexión al asignar rutina.", "error");
+    } finally {
+      setRutinaGuardando(false);
     }
   };
 
@@ -321,9 +332,10 @@ export default function DoctorView() {
         cargarPacientes();
         cargarDashboard();
       } else {
-        mostrarNotificacion("Error al registrar paciente. Verifica los datos.", "error");
+        const detalle = await res.json().catch(() => null);
+        mostrarNotificacion(detalle?.detail || "No se pudo registrar. Revisa los datos e inténtalo de nuevo.", "error");
       }
-    } catch (error) {
+    } catch {
       mostrarNotificacion("Error de conexión al registrar paciente.", "error");
     }
   };
@@ -352,7 +364,7 @@ export default function DoctorView() {
       } else {
         mostrarNotificacion("Error al registrar el nuevo ejercicio en la base de datos.", "error");
       }
-    } catch (error) {
+    } catch {
       mostrarNotificacion("Error de red al añadir el video.", "error");
     }
   };
@@ -373,7 +385,7 @@ export default function DoctorView() {
   );
 
   return (
-    <div className="min-h-screen w-full bg-slate-50 text-slate-800 font-sans p-4 sm:p-6 md:p-10 pb-28">
+    <div className="doctor-portal min-h-screen w-full bg-slate-50 text-slate-800 font-sans p-4 sm:p-6 md:p-10 pb-28">
 
       {/* Notificación Flotante */}
       {notificacion.mensaje && (
@@ -417,8 +429,8 @@ export default function DoctorView() {
           <div className="flex items-center gap-3">
             <span className="text-3xl">🚨</span>
             <div>
-              <h4 className="font-extrabold text-red-400">¡Alerta Temprana de Dolor Severo!</h4>
-              <p className="text-sm text-red-200">El paciente actual ha reportado altos niveles de dolor recientemente. Por favor revisa sus notas y ajusta las rutinas de inmediato.</p>
+                <h4 className="font-extrabold text-red-900">Alerta de dolor reportado</h4>
+              <p className="text-sm text-red-900">El paciente reportó dolor intenso. Revisa su mensaje y las indicaciones antes de actualizar la rutina.</p>
             </div>
           </div>
         </div>
@@ -435,7 +447,7 @@ export default function DoctorView() {
               Base de Datos SQL
             </span>
           </div>
-          <p className="text-sm text-slate-500">Ingresa los datos del paciente para generar su expediente y credenciales de acceso automático.</p>
+          <p className="text-sm text-slate-600">Completa los datos básicos. Los antecedentes clínicos son opcionales y puedes añadirlos después.</p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
@@ -461,9 +473,9 @@ export default function DoctorView() {
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-600 mb-1 font-bold">CONTRASEÑA INICIAL:</label>
+              <label className="block text-sm text-slate-700 mb-1 font-bold">Contraseña inicial</label>
               <input
-                type="text"
+                type="password"
                 value={nuevoPassword}
                 onChange={(e) => setNuevoPassword(e.target.value)}
                 className="w-full bg-slate-100 border border-slate-300 rounded-xl p-3 text-slate-800 text-sm focus:outline-none focus:border-emerald-500"
@@ -480,6 +492,10 @@ export default function DoctorView() {
                 className="w-full bg-slate-100 border border-slate-300 rounded-xl p-3 text-slate-800 text-sm focus:outline-none focus:border-emerald-500"
               />
             </div>
+          </div>
+          <details className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <summary className="cursor-pointer text-sm font-bold text-slate-800">Añadir antecedentes y datos clínicos (opcional)</summary>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
             <div className="md:col-span-2">
               <label className="block text-xs text-slate-600 mb-1 font-bold">DATOS MÉDICOS GENERALES:</label>
               <input
@@ -529,7 +545,8 @@ export default function DoctorView() {
                 className="w-full bg-slate-100 border border-slate-300 rounded-xl p-3 text-slate-800 text-sm focus:outline-none focus:border-emerald-500 resize-none h-20"
               />
             </div>
-          </div>
+            </div>
+          </details>
 
           <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 font-extrabold py-3.5 rounded-xl transition shadow-lg cursor-pointer text-sm">
             Guardar Paciente y Crear Expediente
@@ -609,6 +626,15 @@ export default function DoctorView() {
         </div>
       </div>
 
+      {paciente && (
+        <section className="sticky top-2 z-30 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-2 rounded-2xl border border-amber-300 bg-amber-50/95 p-3 shadow-md backdrop-blur" aria-label="Información clínica importante">
+          <div className="sm:col-span-3 flex items-center gap-2 text-sm font-extrabold text-amber-950"><span aria-hidden="true">⚠️</span> Información clínica · {paciente.nombre}</div>
+          <div className="rounded-xl border border-red-200 bg-white p-3 text-sm text-slate-800"><strong className="block text-red-800">Alergias</strong>{paciente.alergias || 'Sin información registrada'}</div>
+          <div className="rounded-xl border border-amber-200 bg-white p-3 text-sm text-slate-800"><strong className="block text-amber-900">Movimientos a evitar</strong>{paciente.contraindicaciones || 'Sin información registrada'}</div>
+          <div className="rounded-xl border border-sky-200 bg-white p-3 text-sm text-slate-800"><strong className="block text-sky-900">Medicamentos actuales</strong>{paciente.prescripciones_previas || 'Sin información registrada'}</div>
+        </section>
+      )}
+
       {/* Modal de Código QR */}
       {mostrarQrModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 animate-in fade-in">
@@ -642,7 +668,7 @@ export default function DoctorView() {
               : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
           }`}
         >
-          <span>🏋️</span> Asignar Ejercicios & Progreso
+          <span>🏋️</span> Ejercicios
         </button>
 
         <button
@@ -653,7 +679,7 @@ export default function DoctorView() {
               : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
           }`}
         >
-          <span>📋</span> Evolución & Historial Cardex
+          <span>📋</span> Evolución
         </button>
 
         <button
@@ -664,7 +690,7 @@ export default function DoctorView() {
               : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
           }`}
         >
-          <span>📊</span> Dashboard de Cumplimiento
+          <span>📊</span> Resumen
         </button>
 
         <button
@@ -675,7 +701,7 @@ export default function DoctorView() {
               : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
           }`}
         >
-          <span>🎬</span> Añadir Nuevo Video al Catálogo
+          <span>🎬</span> Videos
         </button>
       </nav>
 
@@ -731,6 +757,13 @@ export default function DoctorView() {
                     {ejercicioSeleccionado.descripcion}
                   </p>
 
+                  <div className="rounded-xl overflow-hidden bg-slate-950 border border-slate-200">
+                    <video key={ejercicioSeleccionado.url_video} controls preload="metadata" className="w-full max-h-64 object-contain" aria-label={`Vista previa de ${ejercicioSeleccionado.titulo}`}>
+                      <source src={ejercicioSeleccionado.url_video} type="video/mp4" />
+                      Tu navegador no puede reproducir este video.
+                    </video>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs text-slate-500 mb-1 font-bold">Frecuencia / Series sugeridas:</label>
@@ -754,10 +787,12 @@ export default function DoctorView() {
                   </div>
 
                   <button
+                    type="button"
+                    disabled={rutinaGuardando || !paciente}
                     onClick={() => asignarEjercicioDirecto(ejercicioSeleccionado, frecuenciaAsignar)}
-                    className="w-full mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-slate-800 font-extrabold py-4 rounded-xl transition text-base cursor-pointer shadow-xl flex items-center justify-center gap-2"
+                    className="w-full min-h-12 mt-2 bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 disabled:opacity-60 text-white font-extrabold py-4 rounded-xl transition text-base cursor-pointer disabled:cursor-wait shadow-xl flex items-center justify-center gap-2"
                   >
-                    <span>+</span> Asignar "{ejercicioSeleccionado.titulo}" a este Paciente
+                    <span>{rutinaGuardando ? '⏳' : '+'}</span> {rutinaGuardando ? 'Asignando ejercicio…' : `Asignar ${ejercicioSeleccionado.titulo} a ${paciente?.nombre || 'este paciente'}`}
                   </button>
                 </div>
               )}
@@ -795,7 +830,7 @@ export default function DoctorView() {
 
             {/* Hoja Resumen de Tratamiento */}
             <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-xl space-y-3">
-              <h4 className="text-sm font-bold text-blue-300 uppercase tracking-wider">📋 Hoja de Tratamiento Activo</h4>
+                  <h4 className="text-sm font-bold text-blue-800 uppercase tracking-wider">📋 Plan de ejercicios asignados</h4>
               <p className="text-xs text-slate-500 leading-relaxed">
                 El paciente tiene un plan activo de rehabilitación. Asegúrate de verificar su nivel de dolor antes de incrementar la dificultad o carga de ejercicios.
               </p>
@@ -840,17 +875,11 @@ export default function DoctorView() {
               </div>
 
               <div>
-                <label className="block text-xs text-slate-600 mb-1 font-bold">NIVEL DOLOR (1-10):</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number" min="1" max="10"
-                    value={nivelDolor}
-                    onChange={(e) => setNivelDolor(e.target.value)}
-                    className="w-full bg-slate-100 border border-slate-300 rounded-xl p-3 text-slate-800 font-bold text-center text-sm"
-                  />
-                  <span className="text-xl">
-                    {nivelDolor <= 3 ? '🟢' : nivelDolor <= 6 ? '🟡' : '🔴'}
-                  </span>
+                  <label className="block text-sm text-slate-700 mb-2 font-bold">Nivel de dolor · {nivelDolor} de 10</label>
+                  <div className="grid grid-cols-5 sm:grid-cols-10 gap-2" role="group" aria-label="Nivel de dolor de 1 a 10">
+                    {Array.from({ length: 10 }, (_, index) => index + 1).map((valor) => (
+                      <button key={valor} type="button" aria-pressed={Number(nivelDolor) === valor} onClick={() => setNivelDolor(valor)} className={`min-h-11 rounded-xl border text-base font-extrabold transition ${Number(nivelDolor) === valor ? valor <= 3 ? 'bg-emerald-700 border-emerald-800 text-white' : valor <= 6 ? 'bg-amber-500 border-amber-600 text-slate-950' : 'bg-red-700 border-red-800 text-white' : 'bg-white border-slate-300 text-slate-700 hover:border-slate-500'}`}>{valor}</button>
+                    ))}
                 </div>
               </div>
 
@@ -891,7 +920,7 @@ export default function DoctorView() {
             {/* Historial Cardex */}
             <div id="historia-clinica-pdf" className="bg-white border border-slate-200 p-6 sm:p-8 rounded-3xl shadow-xl space-y-4">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h3 className="text-xl font-extrabold text-blue-300 flex items-center gap-2">
+                <h3 className="text-xl font-extrabold text-blue-800 flex items-center gap-2">
                   📋 Historial Clínico (Cardex)
                 </h3>
                 <div className="flex items-center gap-2">
@@ -912,12 +941,12 @@ export default function DoctorView() {
               {paciente && (
                 <div className="bg-slate-100/50 p-4 rounded-2xl border border-slate-300/50 space-y-2 mb-4 text-xs text-slate-600">
                   <h4 className="font-bold text-slate-800 mb-2 text-sm uppercase">Perfil Médico del Paciente</h4>
-                  <p><strong className="text-blue-300">Nombre:</strong> {paciente.nombre} | <strong className="text-blue-300">ID/Cédula:</strong> {paciente.identificacion || 'N/A'}</p>
-                  <p><strong className="text-blue-300">Datos Generales:</strong> {paciente.datos_medicos_generales || 'Ninguno registrado'}</p>
-                  <p><strong className="text-blue-300">Alergias:</strong> {paciente.alergias || 'Ninguna registrada'}</p>
-                  <p><strong className="text-blue-300">Prescripciones:</strong> {paciente.prescripciones_previas || 'Ninguna'}</p>
-                  <p><strong className="text-blue-300">Contraindicaciones:</strong> {paciente.contraindicaciones || 'Ninguna'}</p>
-                  <p><strong className="text-blue-300">Comentarios:</strong> {paciente.comentarios || 'Sin observaciones'}</p>
+                  <p><strong className="text-blue-800">Nombre:</strong> {paciente.nombre} | <strong className="text-blue-800">ID/Cédula:</strong> {paciente.identificacion || 'N/A'}</p>
+                  <p><strong className="text-blue-800">Datos Generales:</strong> {paciente.datos_medicos_generales || 'Ninguno registrado'}</p>
+                  <p><strong className="text-teal-800">Alergias:</strong> {paciente.alergias || 'Ninguna registrada'}</p>
+                  <p><strong className="text-teal-800">Medicamentos actuales:</strong> {paciente.prescripciones_previas || 'Ninguno registrado'}</p>
+                  <p><strong className="text-teal-800">Movimientos a evitar:</strong> {paciente.contraindicaciones || 'Ninguno registrado'}</p>
+                  <p><strong className="text-blue-800">Comentarios:</strong> {paciente.comentarios || 'Sin observaciones'}</p>
                 </div>
               )}
 
@@ -949,7 +978,7 @@ export default function DoctorView() {
 
             {/* Opiniones y Mensajes Enviados por el Paciente */}
             <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-xl space-y-3">
-              <h4 className="text-sm font-bold text-teal-300 uppercase tracking-wider flex items-center gap-2">
+              <h4 className="text-sm font-bold text-teal-800 uppercase tracking-wider flex items-center gap-2">
                 💬 Opiniones y Feedback Recibido del Paciente ({feedbackPaciente.length})
               </h4>
               <div className="space-y-2 max-h-48 overflow-y-auto pr-2">

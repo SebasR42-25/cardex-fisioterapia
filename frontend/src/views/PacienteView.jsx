@@ -12,6 +12,9 @@ export default function PacienteView() {
   const [videoActivo, setVideoActivo] = useState(null);
   const [tituloVideoActivo, setTituloVideoActivo] = useState("");
   const [loading, setLoading] = useState(true);
+  const [textoGrande, setTextoGrande] = useState(false);
+  const [altoContraste, setAltoContraste] = useState(false);
+  const confettiCelebradoRef = useRef(false);
 
   // Estados Formulario de Opiniones / Feedback para el Doctor
   const [sensacionDolor, setSensacionDolor] = useState("Sin dolor 😊");
@@ -57,16 +60,22 @@ export default function PacienteView() {
 
   useEffect(() => {
     cargarDatos();
+    const timer = window.setInterval(cargarDatos, 4000);
+    return () => window.clearInterval(timer);
   }, [cargarDatos]);
 
   useEffect(() => {
     // Si ya cargaron las rutinas y todas están completadas, lanzar confeti! 🎉
-    if (rutinasAsignadas.length > 0 && rutinasAsignadas.filter(r => !r.completado_hoy).length === 0) {
+    const todoCompletado = rutinasAsignadas.length > 0 && rutinasAsignadas.every(r => r.completado_hoy);
+    if (todoCompletado && !confettiCelebradoRef.current) {
+      confettiCelebradoRef.current = true;
       confetti({
         particleCount: 150,
         spread: 70,
         origin: { y: 0.6 }
       });
+    } else if (!todoCompletado) {
+      confettiCelebradoRef.current = false;
     }
   }, [rutinasAsignadas]);
 
@@ -99,7 +108,7 @@ export default function PacienteView() {
       } else {
         mostrarNotificacion("Error al actualizar el progreso. Intenta de nuevo.", "error");
       }
-    } catch (error) {
+    } catch {
       mostrarNotificacion("Error de conexión.", "error");
     }
   };
@@ -141,7 +150,7 @@ export default function PacienteView() {
       } else {
         mostrarNotificacion("Error al enviar el mensaje al doctor.", "error");
       }
-    } catch (error) {
+    } catch {
       mostrarNotificacion("Problema de red al enviar el mensaje.", "error");
     }
   };
@@ -165,7 +174,7 @@ export default function PacienteView() {
   const strokeDashoffset = 125.6 - (125.6 * porcentajeProgreso) / 100;
 
   return (
-    <div className="min-h-screen w-full bg-blue-50 text-slate-800 font-sans p-4 sm:p-6 md:p-12 pb-28 flex flex-col items-center">
+    <div className={`patient-portal min-h-screen w-full bg-blue-50 text-slate-800 font-sans p-4 sm:p-6 md:p-12 pb-28 flex flex-col items-center ${textoGrande ? 'patient-large-text' : ''} ${altoContraste ? 'patient-high-contrast' : ''}`}>
       {/* Notificación Flotante */}
       {notificacion.mensaje && (
         <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-xl shadow-2xl font-bold flex items-center gap-2 animate-in slide-in-from-top-4 ${notificacion.tipo === 'error' ? 'bg-red-100 text-red-800 border border-red-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}`}>
@@ -186,10 +195,15 @@ export default function PacienteView() {
           </Link>
           <Link
             to="/doctor"
-            className="text-xs bg-teal-100/80 hover:bg-blue-900 border border-teal-300 text-teal-800 px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1"
+            className="min-h-10 text-sm bg-teal-100/80 hover:bg-teal-200 border border-teal-300 text-teal-900 px-3 py-2 rounded-xl font-bold transition flex items-center gap-1"
           >
             <span>👩‍⚕️</span> Ir al Portal Médico
           </Link>
+        </div>
+
+        <div className="flex flex-wrap justify-end gap-2" aria-label="Opciones de accesibilidad">
+          <button type="button" aria-pressed={textoGrande} onClick={() => setTextoGrande(value => !value)} className="min-h-11 px-4 rounded-xl bg-white border border-slate-300 text-slate-800 font-bold hover:bg-slate-100">A+ {textoGrande ? 'Letra normal' : 'Letra grande'}</button>
+          <button type="button" aria-pressed={altoContraste} onClick={() => setAltoContraste(value => !value)} className="min-h-11 px-4 rounded-xl bg-slate-900 text-white border-2 border-slate-900 font-bold hover:bg-black">◐ {altoContraste ? 'Contraste normal' : 'Alto contraste'}</button>
         </div>
 
         {/* Encabezado Accesible */}
@@ -202,8 +216,9 @@ export default function PacienteView() {
               </h1>
             </div>
             <p className="text-slate-600 text-sm mt-1">
-              Tu portal personal de fisioterapia. Sigue las instrucciones de tus videos y completa tus rutinas diarias.
+              Tus ejercicios para hoy y las indicaciones de tu equipo de fisioterapia.
             </p>
+            <p className="text-xs text-teal-700 font-semibold mt-2" aria-live="polite">Actualizamos tus indicaciones automáticamente cada pocos segundos.</p>
           </div>
 
           <div className="bg-teal-100/80 border border-teal-300/80 px-5 py-4 rounded-3xl text-center flex items-center gap-4 shadow-sm">
@@ -282,9 +297,9 @@ export default function PacienteView() {
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-              <span>⏱️</span> Módulo 1: Ejercicios Pendientes para Hoy
+              <span>⏱️</span> Tus ejercicios de hoy
             </h2>
-            <span className="text-xs bg-blue-500/20 text-teal-300 border border-teal-500/30 px-3 py-1 rounded-full font-bold">
+            <span className="text-xs bg-teal-50 text-teal-900 border border-teal-300 px-3 py-1 rounded-full font-bold">
               {rutinasPendientes.length} por realizar
             </span>
           </div>
@@ -358,9 +373,9 @@ export default function PacienteView() {
           <section className="space-y-4 pt-4 border-t border-teal-200">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-extrabold text-teal-700 flex items-center gap-2">
-                <span>✅</span> Módulo 2: Ejercicios Realizados Hoy
+                <span>✅</span> Ejercicios completados
               </h2>
-              <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-full font-bold">
+              <span className="text-xs bg-emerald-50 text-emerald-900 border border-emerald-300 px-3 py-1 rounded-full font-bold">
                 {rutinasHechas.length} completados
               </span>
             </div>

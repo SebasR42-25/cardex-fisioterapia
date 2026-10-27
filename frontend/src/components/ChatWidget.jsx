@@ -17,7 +17,7 @@ export default function ChatWidget() {
     {
       id: 1,
       remitente: 'bot',
-      texto: '👋 ¡Hola! Soy tu Asistente Virtual de Cardex Fisioterapia. ¿Tienes alguna duda sobre tus ejercicios, dolor o indicaciones médicas?',
+      texto: '👋 Hola. Puedo ayudarte a encontrar tus ejercicios, videos e indicaciones. Para decisiones sobre tu tratamiento, consulta a tu profesional de salud.',
       hora: getHoraActual()
     }
   ]);
@@ -48,34 +48,34 @@ export default function ChatWidget() {
     const q = pregunta.toLowerCase();
 
     if (q.includes('dolor') || q.includes('duele') || q.includes('molestia') || q.includes('lastima') || q.includes('punzada')) {
-      return '🚨 **Protocolo ante dolor:** Si el dolor supera el nivel 5 de 10 o sientes punzadas agudas, suspende el ejercicio de inmediato. Aplica compresas frías por 10-15 minutos si hay inflamación y deja un mensaje en la sección de opiniones para que tu doctor lo revise.';
+      return '🚨 Si el dolor aumenta, es intenso o aparece de repente, detén el ejercicio. Cuéntaselo a tu profesional desde “Opiniones y mensajes”. Si necesitas atención urgente, busca ayuda médica de inmediato.';
     }
     if (q.includes('rodilla') || q.includes('pierna') || q.includes('cuadriceps') || q.includes('articulaci')) {
-      return '🦵 **Cuidado de rodilla:** Realiza las extensiones con movimientos lentos y controlados, sentándote con la espalda recta. No bloquees bruscamente la articulación. Si sientes crujido con dolor, reduce el ángulo de elevación.';
+      return '🦵 Abre el video y sigue el movimiento que te indicó tu profesional. No fuerces una postura que te cause dolor. Si tienes dudas sobre el recorrido o las repeticiones, escríbele antes de continuar.';
     }
     if (q.includes('caminata') || q.includes('cardio') || q.includes('caminar') || q.includes('paso')) {
-      return '🚶 **Pautas de caminata estática:** Mantén la espalda erguida, usa calzado deportivo cómodo con suela antideslizante. Respira a un ritmo constante. 5 minutos continuos sin prisa son ideales para activar la circulación en piernas.';
+      return '🚶 Busca un espacio despejado y usa el tiempo que aparece en tu plan. Si te sientes inestable o aparece dolor, detente y avisa a tu profesional.';
     }
     if (q.includes('doctor') || q.includes('medico') || q.includes('médico') || q.includes('cita') || q.includes('contacto') || q.includes('escribir') || q.includes('mensaje')) {
-      return '👨‍⚕️ **Comunicación con tu especialista:** Tu médico revisa diariamente tu Cardex y el progreso de tus ejercicios. Puedes enviarle notas directas y reportar tu nivel de dolor desde la sección inferior de **Opiniones y Mensajes al Doctor**.';
+      return '👨‍⚕️ Puedes enviarle un mensaje y contarle cómo te sentiste en “Opiniones y mensajes”. Esta app no confirma cuándo lo leerá; si necesitas atención urgente, busca ayuda médica de inmediato.';
     }
     if (q.includes('video') || q.includes('reproducir') || q.includes('pantalla') || q.includes('ver') || q.includes('cómo')) {
-      return '▶️ **Reproducción de videos:** Haz clic en el botón **"▶ Ver Video"** en cualquiera de tus ejercicios asignados. El reproductor amplio se abrirá arriba. Puedes pausarlo o verlo tantas veces como desees.';
+      return '▶️ Pulsa “Ver video” en el ejercicio. El reproductor aparece arriba; puedes pausarlo o volver a reproducirlo.';
     }
     if (q.includes('cansan') || q.includes('fatiga') || q.includes('agotad') || q.includes('cansad')) {
-      return '💧 **Manejo de fatiga:** Es completamente normal sentir esfuerzo muscular moderado, pero no agotamiento excesivo. Descansa 1 o 2 minutos entre repeticiones e hidrátate con pequeños sorbos de agua.';
+      return '💧 Si te sientes demasiado cansado, detente y descansa. Si el malestar continúa o te preocupa, consulta a tu profesional antes de retomar.';
     }
     if (q.includes('medicina') || q.includes('medicamento') || q.includes('pastilla')) {
-      return '💊 **Medicamentos:** Sí, puedes tomar tu medicación habitual según te haya recetado el médico general. Te sugiero esperar unos 30 minutos después de comer o tomar pastillas antes de iniciar la rutina física.';
+      return '💊 No puedo decirte qué medicamento tomar ni cuándo. Sigue la receta que te dieron y pregunta a tu médico o farmacéutico si tienes dudas.';
     }
     if (q.includes('hora') || q.includes('cuando') || q.includes('cuándo') || q.includes('horario') || q.includes('mejor momento')) {
-      return '⏰ **Horarios Ideales:** Te recomendamos hacer tus ejercicios por la mañana (después del desayuno) o a media tarde, evitando las horas de más calor y no muy cerca de la hora de dormir, para que puedas descansar adecuadamente.';
+      return '⏰ Sigue el horario que acordaste con tu profesional. Si necesitas cambiarlo, consúltalo con tu equipo de fisioterapia.';
     }
     if (q.includes('hola') || q.includes('buenos') || q.includes('buenas') || q.includes('saludos') || q.includes('inicio') || q.includes('ayuda')) {
-      return '👋 **¡Hola! Estoy para servirte.** Puedes preguntarme sobre técnicas de ejercicio, qué hacer si sientes molestia, cómo ver tus videos o cómo enviar notas a tu médico.';
+      return '👋 Puedo mostrarte cómo abrir un video, encontrar una indicación o enviar un mensaje a tu profesional.';
     }
 
-    return '🤖 **Asistente Cardex:** He recibido tu consulta. Para recomendaciones específicas sobre tu tratamiento, revisa las notas de tu médico en la parte superior o pregúntame sobre: **dolor**, **rodilla**, **caminata**, **horarios** o **cómo ver videos**.';
+    return '🤖 Puedo ayudarte con los videos, las indicaciones guardadas y los mensajes. Para cambios en tu tratamiento, pregunta a tu profesional.';
   };
 
   const enviarMensaje = (textoAEnviar) => {
@@ -117,14 +117,14 @@ export default function ChatWidget() {
       {abierto && (
         <div className="bg-white border border-slate-300 w-[90vw] sm:w-[380px] h-[520px] rounded-3xl shadow-2xl flex flex-col overflow-hidden mb-3 animate-in fade-in slide-in-from-bottom-5">
           {/* Header del Chat */}
-          <div className="bg-gradient-to-r from-blue-700 to-indigo-800 p-4 text-slate-800 flex justify-between items-center shadow">
+          <div className="bg-gradient-to-r from-blue-800 to-indigo-900 p-4 text-white flex justify-between items-center shadow">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-blue-900/80 border border-blue-400 flex items-center justify-center text-xl shadow-inner">
                 🤖
               </div>
               <div>
                 <h4 className="font-extrabold text-sm leading-tight">Asistente Fisioterapia</h4>
-                <span className="text-[11px] text-blue-200 flex items-center gap-1.5 font-medium">
+                <span className="text-[11px] text-blue-100 flex items-center gap-1.5 font-medium">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                   En línea para ayudarte
                 </span>
@@ -132,7 +132,7 @@ export default function ChatWidget() {
             </div>
             <button
               onClick={() => setAbierto(false)}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-800 flex items-center justify-center text-sm font-bold transition cursor-pointer"
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm font-bold transition cursor-pointer"
               title="Cerrar chat"
             >
               ✕
@@ -204,7 +204,7 @@ export default function ChatWidget() {
       {/* Botón Flotante de Activación */}
       <button
         onClick={() => setAbierto(!abierto)}
-        className="flex items-center gap-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-slate-800 font-extrabold px-5 py-3.5 rounded-full shadow-2xl border-2 border-blue-400/40 transition hover:scale-105 cursor-pointer"
+        className="flex items-center gap-2.5 bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-800 hover:to-indigo-900 text-white font-extrabold px-5 py-3.5 rounded-full shadow-2xl border-2 border-blue-400/40 transition hover:scale-105 cursor-pointer"
       >
         <span className="text-xl">💬</span>
         <span className="text-sm tracking-wide">{abierto ? 'Cerrar Chat' : 'Ayuda / Chat Fisioterapia'}</span>

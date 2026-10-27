@@ -245,6 +245,12 @@ def obtener_cardex_paciente(paciente_id: int, db: Session = Depends(get_db)):
 
 @app.post("/pacientes/{paciente_id}/cardex", status_code=status.HTTP_201_CREATED)
 def agregar_evolucion_cardex(paciente_id: int, cardex: CardexCreate, db: Session = Depends(get_db)):
+    paciente = db.query(Usuario).filter(Usuario.id == paciente_id, Usuario.rol == RolUsuario.PACIENTE).first()
+    doctor = db.query(Usuario).filter(Usuario.id == cardex.doctor_id, Usuario.rol == RolUsuario.DOCTOR).first()
+    if not paciente:
+        raise HTTPException(status_code=404, detail="No encontramos este paciente.")
+    if not doctor:
+        raise HTTPException(status_code=404, detail="La sesión médica no es válida. Vuelve a ingresar.")
     nuevo_registro = Cardex(
         paciente_id=paciente_id,
         doctor_id=cardex.doctor_id,
@@ -318,6 +324,12 @@ def cambiar_estado_rutina(rutina_id: int, estado: RutinaEstadoUpdate, db: Sessio
 
 @app.post("/pacientes/{paciente_id}/asignar-rutina")
 def asignar_rutina_paciente(paciente_id: int, data: AsignarRutinaRequest, db: Session = Depends(get_db)):
+    paciente = db.query(Usuario).filter(Usuario.id == paciente_id, Usuario.rol == RolUsuario.PACIENTE).first()
+    ejercicio = db.query(Ejercicio).filter(Ejercicio.id == data.ejercicio_id).first()
+    if not paciente:
+        raise HTTPException(status_code=404, detail="No encontramos este paciente.")
+    if not ejercicio:
+        raise HTTPException(status_code=404, detail="No encontramos este ejercicio en el catálogo.")
     nueva_asignacion = RutinaAsignada(
         paciente_id=paciente_id,
         ejercicio_id=data.ejercicio_id,
@@ -362,6 +374,20 @@ def listar_ejercicios_disponibles(db: Session = Depends(get_db)):
                 "descripcion": "Excelente para mejorar la resistencia cardiovascular de bajo impacto y activar la circulación en piernas.",
                 "url_video": "/videos/caminata.mp4",
                 "zona_cuerpo": "General"
+            },
+            {
+                "id": 3,
+                "titulo": "Sentadilla Asistida",
+                "descripcion": "Video de demostración para revisar la postura y el recorrido con el profesional tratante.",
+                "url_video": "/videos/sentadilla.mp4",
+                "zona_cuerpo": "Pierna"
+            },
+            {
+                "id": 4,
+                "titulo": "Video de ejercicio",
+                "descripcion": "Video de demostración para revisar con el profesional tratante antes de asignarlo.",
+                "url_video": "/videos/ejercicio-demostracion.mp4",
+                "zona_cuerpo": "General"
             }
         ]
     return ejercicios
@@ -400,11 +426,16 @@ def login_usuario(data: LoginRequest, db: Session = Depends(get_db)):
 
 @app.post("/pacientes/registrar", status_code=status.HTTP_201_CREATED)
 def registrar_nuevo_paciente(data: PacienteRegistroCompleto, db: Session = Depends(get_db)):
+    identificacion = data.identificacion.strip() if data.identificacion else None
+    if identificacion and db.query(Usuario).filter(Usuario.identificacion == identificacion).first():
+        raise HTTPException(status_code=409, detail="Ya existe una persona con esa identificación.")
+    if db.query(Usuario).filter(Usuario.email == data.email).first():
+        raise HTTPException(status_code=409, detail="Ya existe una cuenta con ese correo electrónico.")
     nuevo = Usuario(
-        nombre=data.nombre,
+        nombre=data.nombre.strip(),
         email=data.email,
         password_hash=data.password,
-        identificacion=data.identificacion,
+        identificacion=identificacion,
         datos_medicos_generales=data.datos_medicos_generales,
         alergias=data.alergias,
         prescripciones_previas=data.prescripciones_previas,
@@ -492,6 +523,24 @@ def startup_event():
         else:
             ej2.titulo = "Caminata Estática"
             ej2.descripcion = "Excelente para mejorar la resistencia cardiovascular de bajo impacto y activar la circulación en piernas."
+
+        ej3 = db.query(Ejercicio).filter(Ejercicio.titulo == "Sentadilla Asistida").first()
+        if not ej3:
+            db.add(Ejercicio(
+                titulo="Sentadilla Asistida",
+                descripcion="Video de demostración para revisar la postura y el recorrido con el profesional tratante.",
+                url_video="/videos/sentadilla.mp4",
+                zona_cuerpo="Pierna"
+            ))
+
+        video_demo = db.query(Ejercicio).filter(Ejercicio.titulo == "Video de ejercicio").first()
+        if not video_demo:
+            db.add(Ejercicio(
+                titulo="Video de ejercicio",
+                descripcion="Video de demostración para revisar con el profesional tratante antes de asignarlo.",
+                url_video="/videos/ejercicio-demostracion.mp4",
+                zona_cuerpo="General"
+            ))
 
         # 2. Doctor base
         doctor = db.query(Usuario).filter(Usuario.rol == RolUsuario.DOCTOR).first()

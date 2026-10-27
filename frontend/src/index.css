@@ -1,1 +1,34 @@
 @import "tailwindcss";
+
+.patient-large-text [class*="text-xs"],
+.patient-large-text [class*="text-sm"],
+.patient-large-text [class*="text-[11px]"],
+.patient-large-text [class*="text-[10px]"] {
+  font-size: 1rem !important;
+  line-height: 1.5 !important;
+}
+
+.patient-high-contrast {
+  background-color: #e5e7eb !important;
+}
+
+.patient-high-contrast header,
+.patient-high-contrast section,
+.patient-high-contrast article,
+.patient-high-contrast [class*="rounded-2xl"],
+.patient-high-contrast [class*="rounded-3xl"] {
+  border-color: #334155 !important;
+}
+
+.patient-portal button:focus-visible,
+.patient-portal a:focus-visible,
+.patient-portal input:focus-visible,
+.patient-portal textarea:focus-visible,
+.doctor-portal button:focus-visible,
+.doctor-portal a:focus-visible,
+.doctor-portal input:focus-visible,
+.doctor-portal textarea:focus-visible,
+.doctor-portal select:focus-visible {
+  outline: 3px solid #0f766e;
+  outline-offset: 2px;
+}

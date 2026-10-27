@@ -5,7 +5,12 @@ import DoctorView from './views/DoctorView';
 import ChatWidget from './components/ChatWidget';
 
 function PrivateRoute({ children }) {
-  const user = JSON.parse(localStorage.getItem('cardex_user'));
+  let user = null;
+  try {
+    user = JSON.parse(localStorage.getItem('cardex_user'));
+  } catch {
+    localStorage.removeItem('cardex_user');
+  }
   if (!user || user.rol !== 'doctor') {
     return <Navigate to="/" replace />;
   }

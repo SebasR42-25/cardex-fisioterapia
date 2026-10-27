@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../config';
 
 export default function LoginView() {
-  const [identificacion, setIdentificacion] = useState("");
+  const [identificacion, setIdentificacion] = useState("1");
   const [password, setPassword] = useState("123456");
   const [isDoctor, setIsDoctor] = useState(false);
   const [error, setError] = useState("");
@@ -29,66 +29,66 @@ export default function LoginView() {
       } else {
         setError("Credenciales inválidas. Inténtalo de nuevo.");
       }
-    } catch (err) {
+    } catch {
       setError("Error al conectar con el servidor.");
     }
   };
 
   return (
-    <div className="min-h-screen w-full bg-slate-950 text-slate-100 flex items-center justify-center p-6 font-sans">
-      <div className="bg-slate-900 border border-slate-800 p-8 sm:p-10 rounded-3xl shadow-2xl max-w-md w-full space-y-6 text-center">
+    <div className="min-h-screen w-full bg-gradient-to-br from-teal-50 via-sky-50 to-blue-100 text-slate-800 flex items-center justify-center p-4 sm:p-6 font-sans">
+      <div className="bg-white/95 border border-teal-100 p-6 sm:p-9 rounded-3xl shadow-xl max-w-md w-full space-y-6 text-center">
 
         <div className="space-y-2">
-          <div className="w-16 h-16 bg-blue-600/20 border border-blue-500/40 rounded-3xl flex items-center justify-center text-3xl mx-auto shadow-inner">
+          <div className="w-16 h-16 bg-teal-50 border border-teal-200 rounded-3xl flex items-center justify-center text-3xl mx-auto shadow-inner">
             🩺
           </div>
-          <h1 className="text-3xl font-extrabold text-blue-400 tracking-tight">Cardex Fisioterapia</h1>
-          <p className="text-sm text-slate-400">
-            Plataforma de seguimiento y rehabilitación inteligente
+          <h1 className="text-3xl font-extrabold text-teal-800 tracking-tight">Cardex Fisioterapia</h1>
+          <p className="text-sm text-slate-600">
+            Tus ejercicios y seguimiento, en un solo lugar
           </p>
         </div>
 
-        <div className="flex bg-slate-800 rounded-xl p-1 mb-4">
+        <div className="flex bg-slate-100 rounded-xl p-1 mb-4">
             <button 
-              onClick={() => setIsDoctor(false)}
-              className={`flex-1 py-2 text-sm font-bold rounded-lg transition ${!isDoctor ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+              onClick={() => { setIsDoctor(false); setIdentificacion('1'); }}
+              className={`flex-1 min-h-11 py-2 text-sm font-bold rounded-lg transition ${!isDoctor ? 'bg-teal-700 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
             >
               Paciente
             </button>
             <button 
-              onClick={() => setIsDoctor(true)}
-              className={`flex-1 py-2 text-sm font-bold rounded-lg transition ${isDoctor ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+              onClick={() => { setIsDoctor(true); setIdentificacion('123456789'); }}
+              className={`flex-1 min-h-11 py-2 text-sm font-bold rounded-lg transition ${isDoctor ? 'bg-indigo-700 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
             >
               Doctor
             </button>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4 text-left">
-            {error && <p className="text-red-400 text-xs font-bold text-center">{error}</p>}
+            {error && <p role="alert" className="text-red-700 bg-red-50 border border-red-200 p-3 rounded-xl text-sm font-bold text-center">{error}</p>}
             
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+              <label className="text-sm font-bold text-slate-700 block">
                 {isDoctor ? "Cédula Médica" : "ID de Paciente / Identificación"}
               </label>
               <input
                 type="text"
                 value={identificacion}
                 onChange={(e) => setIdentificacion(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-base focus:outline-none focus:border-blue-500 font-semibold"
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 text-base focus:outline-none focus:ring-2 focus:ring-teal-600 font-semibold"
                 placeholder={isDoctor ? "Ej: 123456789" : "Ej: 1"}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+              <label className="text-sm font-bold text-slate-700 block">
                 Contraseña
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-base focus:outline-none focus:border-blue-500 font-semibold"
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 text-base focus:outline-none focus:ring-2 focus:ring-teal-600 font-semibold"
                 placeholder="********"
                 required
               />
@@ -96,15 +96,24 @@ export default function LoginView() {
 
             <button
               type="submit"
-              className={`w-full ${isDoctor ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-blue-600 hover:bg-blue-500'} px-6 py-3.5 rounded-xl font-bold transition text-white shadow-lg cursor-pointer text-sm`}
+              className={`w-full min-h-12 ${isDoctor ? 'bg-indigo-700 hover:bg-indigo-800' : 'bg-teal-700 hover:bg-teal-800'} px-6 py-3.5 rounded-xl font-bold transition text-white shadow-lg cursor-pointer text-base`}
             >
               Ingresar al Portal
             </button>
         </form>
 
-        <div className="pt-4 border-t border-slate-800/60 text-[11px] text-slate-500 flex justify-between items-center px-1 mt-6">
-          <span>v1.1 Autenticación Segura</span>
-          <span className="text-emerald-400 font-medium">● Servidor Activo</span>
+        <div className="pt-4 border-t border-slate-200 text-xs text-slate-600 flex justify-between items-center px-1 mt-6">
+          <span>Acceso de demostración</span>
+          <span className="text-emerald-700 font-medium">● Portal disponible</span>
+        </div>
+
+        <div className="bg-sky-50 border border-sky-100 rounded-2xl p-4 text-left space-y-2">
+          <p className="text-sm font-bold text-slate-800">Datos de prueba</p>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => { setIsDoctor(false); setIdentificacion('1'); setPassword('123456'); }} className="min-h-10 px-3 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-teal-50">Paciente · ID 1</button>
+            <button type="button" onClick={() => { setIsDoctor(true); setIdentificacion('123456789'); setPassword('123456'); }} className="min-h-10 px-3 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-indigo-50">Médico · cédula de prueba</button>
+          </div>
+          <p className="text-xs text-slate-600">Contraseña de prueba: <strong>123456</strong></p>
         </div>
 
       </div>
