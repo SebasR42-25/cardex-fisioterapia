@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { API_URL } from '../config';
+
+const DashboardChart = lazy(() => import('../components/DashboardChart'));
 
 export default function DoctorView() {
   // Pestaña activa: 'expediente', 'evolucion', 'dashboard', 'catalogo'
@@ -1047,16 +1048,9 @@ export default function DoctorView() {
           <div className="bg-white border border-slate-200 p-6 sm:p-8 rounded-3xl shadow-xl space-y-4">
             <h3 className="text-xl font-extrabold text-indigo-400">📈 Gráfico de Adherencia por Paciente</h3>
             <div className="h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dashboardData.pacientes} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="nombre" stroke="#64748b" tick={{ fontSize: 12 }} />
-                  <YAxis stroke="#64748b" tick={{ fontSize: 12 }} allowDecimals={false} />
-                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }} />
-                  <Bar dataKey="total_rutinas" name="Rutinas Asignadas" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="completadas" name="Rutinas Completadas" fill="#10b981" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <Suspense fallback={<div className="h-full flex items-center justify-center text-slate-600" role="status">Cargando gráfica…</div>}>
+                <DashboardChart data={dashboardData.pacientes} />
+              </Suspense>
             </div>
           </div>
 
