@@ -388,6 +388,20 @@ def listar_ejercicios_disponibles(db: Session = Depends(get_db)):
                 "descripcion": "Video de demostración para revisar con el profesional tratante antes de asignarlo.",
                 "url_video": "/videos/ejercicio-demostracion.mp4",
                 "zona_cuerpo": "General"
+            },
+            {
+                "id": 5,
+                "titulo": "Video ortopedia 02",
+                "descripcion": "Material audiovisual compartido para validar la biblioteca y el flujo ortopédico.",
+                "url_video": "/videos/ortopedia-demo-02.mp4",
+                "zona_cuerpo": "Ortopedia"
+            },
+            {
+                "id": 6,
+                "titulo": "Video ortopedia 03",
+                "descripcion": "Material audiovisual compartido para validar la biblioteca y el flujo ortopédico.",
+                "url_video": "/videos/ortopedia-demo-03.mp4",
+                "zona_cuerpo": "Ortopedia"
             }
         ]
     return ejercicios
@@ -541,6 +555,19 @@ def startup_event():
                 url_video="/videos/ejercicio-demostracion.mp4",
                 zona_cuerpo="General"
             ))
+
+        for titulo, url_video in (
+            ("Video ortopedia 02", "/videos/ortopedia-demo-02.mp4"),
+            ("Video ortopedia 03", "/videos/ortopedia-demo-03.mp4")
+        ):
+            video_ortopedia = db.query(Ejercicio).filter(Ejercicio.titulo == titulo).first()
+            if not video_ortopedia:
+                db.add(Ejercicio(
+                    titulo=titulo,
+                    descripcion="Material audiovisual compartido para validar la biblioteca y el flujo ortopédico.",
+                    url_video=url_video,
+                    zona_cuerpo="Ortopedia"
+                ))
 
         # 2. Doctor base
         doctor = db.query(Usuario).filter(Usuario.rol == RolUsuario.DOCTOR).first()

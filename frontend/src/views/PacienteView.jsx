@@ -11,6 +11,9 @@ export default function PacienteView() {
   const [cardex, setCardex] = useState([]);
   const [videoActivo, setVideoActivo] = useState(null);
   const [tituloVideoActivo, setTituloVideoActivo] = useState("");
+  const [instruccionesVideo, setInstruccionesVideo] = useState("");
+  const [videoError, setVideoError] = useState(false);
+  const [estadoAudio, setEstadoAudio] = useState("");
   const [loading, setLoading] = useState(true);
   const [textoGrande, setTextoGrande] = useState(false);
   const [altoContraste, setAltoContraste] = useState(false);
@@ -81,13 +84,26 @@ export default function PacienteView() {
 
   const leerInstrucciones = (texto) => {
     if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel(); // Detener si estaba hablando
+      window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(texto);
-      utterance.lang = 'es-ES';
-      utterance.rate = 0.9;
+      const vocesEspanol = window.speechSynthesis.getVoices()
+        .filter(voz => voz.lang.toLowerCase().startsWith('es'))
+        .sort((a, b) => {
+          const prioridad = voz => ({ 'es-co': 0, 'es-mx': 1, 'es-es': 2 }[voz.lang.toLowerCase()] ?? 3);
+          return prioridad(a) - prioridad(b);
+        });
+      const vozPreferida = vocesEspanol[0];
+      if (vozPreferida) utterance.voice = vozPreferida;
+      utterance.lang = vozPreferida?.lang || 'es-CO';
+      utterance.rate = 0.86;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+      utterance.onend = () => setEstadoAudio('');
+      utterance.onerror = () => setEstadoAudio('No se pudo iniciar el audio. Puedes usar la lectura de voz del dispositivo.');
+      setEstadoAudio(vozPreferida ? `Leyendo con voz en español (${vozPreferida.lang}).` : 'Leyendo con la voz en español disponible en el dispositivo.');
       window.speechSynthesis.speak(utterance);
     } else {
-      alert("Lo siento, tu navegador no soporta lectura en voz alta.");
+      setEstadoAudio('Este navegador no ofrece voz automática. Las instrucciones están visibles para leerlas.');
     }
   };
 
@@ -121,6 +137,9 @@ export default function PacienteView() {
     }
     setVideoActivo(url);
     setTituloVideoActivo(titulo);
+    setVideoError(false);
+    setEstadoAudio("");
+    setInstruccionesVideo(`${titulo}. ${rutina.ejercicio?.descripcion || 'Sigue el movimiento que te indicó tu profesional.'} Frecuencia indicada: ${rutina.frecuencia || 'según la pauta de tu profesional'}. Si el video no abre, puedes escuchar estas indicaciones.`);
 
     setTimeout(() => {
       videoPlayerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -273,7 +292,7 @@ export default function PacienteView() {
                 <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900">{tituloVideoActivo}</h3>
               </div>
               <button
-                onClick={() => setVideoActivo(null)}
+                onClick={() => { setVideoActivo(null); setVideoError(false); window.speechSynthesis?.cancel(); setEstadoAudio(""); }}
                 className="bg-red-600 hover:bg-red-500 text-slate-900 px-5 py-2.5 rounded-2xl text-sm font-bold transition shadow-lg cursor-pointer"
               >
                 ✕ Cerrar Video
@@ -282,13 +301,20 @@ export default function PacienteView() {
 
             {/* Frame Amplio de Video */}
             <div className="w-full bg-black rounded-3xl overflow-hidden shadow-2xl flex justify-center border border-teal-300">
-              <video key={videoActivo} controls autoPlay className="w-full max-h-[550px] object-contain">
-                <source src={videoActivo} type="video/mp4" />
+              <video key={videoActivo} controls autoPlay preload="metadata" onError={() => setVideoError(true)} onCanPlay={() => setVideoError(false)} className="w-full max-h-[550px] object-contain">
+                <source src={videoActivo} type="video/mp4" onError={() => setVideoError(true)} />
                 Tu navegador no soporta la reproducción directa de este video.
               </video>
             </div>
+            {videoError && (
+              <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950 sm:flex-row sm:items-center sm:justify-between">
+                <div><strong>No se pudo reproducir este video.</strong><p className="text-sm">Prueba con audio: las instrucciones están en español y usan la voz disponible en tu dispositivo.</p></div>
+                <button type="button" onClick={() => leerInstrucciones(instruccionesVideo)} className="min-h-12 shrink-0 rounded-xl bg-amber-700 px-5 py-3 text-base font-extrabold text-white hover:bg-amber-800">🔊 Escuchar instrucciones</button>
+              </div>
+            )}
+            {estadoAudio && <p role="status" aria-live="polite" className="rounded-xl bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-900">{estadoAudio}</p>}
             <p className="text-xs text-slate-600 text-center italic">
-              💡 Tip: Realiza el ejercicio a tu propio ritmo. Si sientes fatiga o dolor agudo, pausa el video y descansa.
+              💡 Puedes pausar el video o escuchar la descripción del ejercicio con el botón “Escuchar”.
             </p>
           </div>
         )}

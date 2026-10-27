@@ -30,7 +30,9 @@ export default function DoctorView() {
     { id: 1, titulo: "Extensión de Rodilla", descripcion: "Ideal para fortalecer cuádriceps y recuperar movilidad articular tras cirugías o desgaste leve.", frecuenciaSugerida: "3 series de 10 repeticiones", url_video: "/videos/rodilla.mp4", zona_cuerpo: "Pierna" },
     { id: 2, titulo: "Caminata Estática", descripcion: "Excelente para mejorar la resistencia cardiovascular de bajo impacto y activar la circulación en piernas.", frecuenciaSugerida: "5 minutos continuos", url_video: "/videos/caminata.mp4", zona_cuerpo: "General" },
     { id: 3, titulo: "Sentadilla Asistida", descripcion: "Video de demostración para revisar la postura y el recorrido con el profesional tratante.", frecuenciaSugerida: "Según indicación profesional", url_video: "/videos/sentadilla.mp4", zona_cuerpo: "Pierna" },
-    { id: 4, titulo: "Video de ejercicio", descripcion: "Video de demostración para revisar con el profesional tratante antes de asignarlo.", frecuenciaSugerida: "Según indicación profesional", url_video: "/videos/ejercicio-demostracion.mp4", zona_cuerpo: "General" }
+    { id: 4, titulo: "Video de ejercicio", descripcion: "Video de demostración para revisar con el profesional tratante antes de asignarlo.", frecuenciaSugerida: "Según indicación profesional", url_video: "/videos/ejercicio-demostracion.mp4", zona_cuerpo: "General" },
+    { id: 5, titulo: "Video ortopedia 02", descripcion: "Material audiovisual compartido para validar la biblioteca y el flujo ortopédico.", frecuenciaSugerida: "Según indicación profesional", url_video: "/videos/ortopedia-demo-02.mp4", zona_cuerpo: "Ortopedia" },
+    { id: 6, titulo: "Video ortopedia 03", descripcion: "Material audiovisual compartido para validar la biblioteca y el flujo ortopédico.", frecuenciaSugerida: "Según indicación profesional", url_video: "/videos/ortopedia-demo-03.mp4", zona_cuerpo: "Ortopedia" }
   ];
   const [ejerciciosCatalogo, setEjerciciosCatalogo] = useState(ejerciciosCatalogoBase);
   const [selectedEjercicioId, setSelectedEjercicioId] = useState(1);
@@ -401,10 +403,10 @@ export default function DoctorView() {
         <div>
           <div className="flex items-center gap-3">
             <span className="text-3xl">🩺</span>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-blue-800 tracking-tight">Portal Clínico del Médico</h1>
+          <h1 className="text-3xl md:text-4xl font-extrabold text-blue-800 tracking-tight">Cardex · Ortopedia</h1>
           </div>
           <p className="text-slate-500 mt-1 text-sm md:text-base">
-            Control integral de expedientes, asignación interactiva, historial Cardex y dashboard de cumplimiento.
+            Espacio de prueba personalizado para seguimiento ortopédico y rehabilitación.
           </p>
         </div>
 
@@ -704,9 +706,117 @@ export default function DoctorView() {
         >
           <span>🎬</span> Videos
         </button>
+        <button
+          onClick={() => setPestañaActiva('ortopedia')}
+          className={`flex-1 min-w-[140px] py-3 px-4 rounded-xl font-extrabold text-sm transition cursor-pointer flex items-center justify-center gap-2 ${
+            pestañaActiva === 'ortopedia'
+              ? 'bg-gradient-to-r from-indigo-700 to-violet-700 text-white shadow-lg'
+              : 'text-slate-600 hover:text-indigo-800 hover:bg-violet-50'
+          }`}
+        >
+          <span>🦴</span> Ortopedia
+        </button>
       </nav>
 
       {/* CONTENIDO DE LAS PESTAÑAS */}
+
+      {pestañaActiva === 'ortopedia' && (
+        <section className="space-y-6" aria-labelledby="ortopedia-title">
+          <div className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-900 p-6 text-white shadow-2xl sm:p-9">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-3xl space-y-3">
+                <span className="inline-flex items-center gap-2 rounded-full border border-violet-200/30 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-violet-100">Piloto de especialidad · Consulta ortopédica</span>
+                <h2 id="ortopedia-title" className="text-3xl font-black tracking-tight sm:text-4xl">Un flujo hecho para el día a día de ortopedia</h2>
+                <p className="max-w-2xl text-base leading-relaxed text-indigo-100 sm:text-lg">La prueba ordena expediente, movilidad, dolor, restricciones y ejercicios en un mismo recorrido. El profesional conserva el control de la pauta y el paciente recibe instrucciones y seguimiento claros.</p>
+              </div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                {[
+                  { label: 'Pacientes', value: dashboardData.total_pacientes, color: 'text-cyan-200' },
+                  { label: 'Videos', value: ejerciciosCatalogo.length, color: 'text-fuchsia-200' },
+                  { label: 'Pautas', value: dashboardData.total_rutinas, color: 'text-amber-200' }
+                ].map(item => (
+                  <div key={item.label} className="min-w-[5.5rem] rounded-2xl border border-white/15 bg-white/10 p-3 text-center backdrop-blur sm:min-w-[6.5rem]">
+                    <strong className={`block text-2xl font-black ${item.color}`}>{item.value}</strong>
+                    <span className="text-xs font-semibold text-white/80">{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            {[
+              { icon: '🗂️', title: 'Expediente ortopédico', text: 'Dolor, movilidad, medicamentos, alergias y restricciones visibles al revisar el caso.', tone: 'from-cyan-50 to-sky-100 border-cyan-200' },
+              { icon: '🎬', title: 'Pauta con apoyo visual', text: 'Videos asignables desde la biblioteca del piloto; la frecuencia se define según el profesional.', tone: 'from-fuchsia-50 to-violet-100 border-fuchsia-200' },
+              { icon: '🔁', title: 'Seguimiento conectado', text: 'Notas del médico y comentarios del paciente aparecen en sus respectivos portales.', tone: 'from-amber-50 to-orange-100 border-amber-200' }
+            ].map(item => (
+              <article key={item.title} className={`rounded-3xl border bg-gradient-to-br p-5 shadow-sm ${item.tone}`}>
+                <span className="text-3xl" aria-hidden="true">{item.icon}</span>
+                <h3 className="mt-3 text-lg font-extrabold text-slate-900">{item.title}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-slate-700">{item.text}</p>
+              </article>
+            ))}
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg sm:p-7">
+              <div className="flex items-center gap-3">
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-indigo-100 text-2xl">🧭</span>
+                <div>
+                  <h3 className="text-xl font-extrabold text-slate-900">Cambios para esta prueba</h3>
+                  <p className="text-sm text-slate-600">Ajustes dirigidos a las herramientas de trabajo del especialista</p>
+                </div>
+              </div>
+              <ol className="mt-5 space-y-3">
+                {[
+                  ['01', 'Revisión rápida del caso', 'Alertas de alergias y restricciones junto al perfil clínico.'],
+                  ['02', 'Decisión profesional', 'Registro de dolor y movilidad dentro de la evolución, con espacio para la nota del médico.'],
+                  ['03', 'Plan para casa', 'Selección del video, frecuencia indicada y acceso del paciente mediante su portal.'],
+                  ['04', 'Continuidad', 'El paciente consulta la indicación y envía comentarios que vuelven a la vista médica.']
+                ].map(([number, title, text]) => (
+                  <li key={number} className="flex gap-3 rounded-2xl bg-slate-50 p-3">
+                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-indigo-700 text-xs font-black text-white">{number}</span>
+                    <div><strong className="text-sm text-slate-900">{title}</strong><p className="text-sm leading-relaxed text-slate-600">{text}</p></div>
+                  </li>
+                ))}
+              </ol>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <button type="button" onClick={() => { setMostrarFormCrear(true); setPestañaActiva('expediente'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="min-h-11 rounded-xl bg-indigo-700 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-800">＋ Registrar paciente</button>
+                <button type="button" onClick={() => setPestañaActiva('catalogo')} className="min-h-11 rounded-xl border border-violet-300 bg-violet-50 px-4 py-2 text-sm font-bold text-violet-900 hover:bg-violet-100">Abrir biblioteca de videos</button>
+                <button type="button" onClick={() => setPestañaActiva('evolucion')} className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-800 hover:bg-slate-50">Registrar evolución</button>
+              </div>
+            </article>
+
+            <article className="rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 p-6 shadow-lg sm:p-7">
+              <div className="flex items-center gap-3">
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-violet-700 text-2xl text-white">☁️</span>
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-violet-800">Modelo de negocio por validar</span>
+                  <h3 className="text-xl font-extrabold text-slate-900">Cardex como SaaS</h3>
+                </div>
+              </div>
+              <p className="mt-4 text-sm leading-relaxed text-slate-700">La propuesta es ofrecer el espacio de trabajo a profesionales o consultorios mediante una suscripción. El paciente accede a su seguimiento desde un enlace o código QR; el especialista mantiene el expediente, la biblioteca y la comunicación en una sola plataforma.</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-white bg-white/90 p-4"><strong className="text-sm text-violet-900">Para el consultorio</strong><p className="mt-1 text-sm text-slate-600">Un flujo repetible para organizar pacientes, pautas y seguimiento.</p></div>
+                <div className="rounded-2xl border border-white bg-white/90 p-4"><strong className="text-sm text-fuchsia-900">Para el paciente</strong><p className="mt-1 text-sm text-slate-600">Videos, frecuencia e indicaciones accesibles desde su teléfono.</p></div>
+              </div>
+              <div className="mt-4 rounded-2xl border border-violet-200 bg-violet-100/70 p-4 text-sm leading-relaxed text-violet-950"><strong>Validación del piloto:</strong> observar si reduce pasos de registro, facilita asignar material de ejercicio y mejora la continuidad de comunicación. Esta pantalla presenta el modelo a evaluar; no procesa suscripciones.</div>
+            </article>
+          </div>
+
+          <div className="rounded-3xl border border-teal-200 bg-gradient-to-r from-teal-50 to-cyan-50 p-5 sm:p-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div><h3 className="text-lg font-extrabold text-teal-950">¿Qué validar con el especialista?</h3><p className="text-sm text-teal-900">Recorrido, utilidad de la biblioteca y claridad del seguimiento para médico y paciente.</p></div>
+              <button type="button" onClick={() => setPestañaActiva('dashboard')} className="min-h-11 rounded-xl bg-teal-800 px-4 py-2 text-sm font-bold text-white hover:bg-teal-900">Ver resumen de actividad</button>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <p className="rounded-xl bg-white/80 p-3 text-sm text-slate-700"><strong className="text-teal-900">1.</strong> ¿El expediente presenta primero lo que necesitas revisar?</p>
+              <p className="rounded-xl bg-white/80 p-3 text-sm text-slate-700"><strong className="text-teal-900">2.</strong> ¿Puedes encontrar y asignar el video adecuado con pocos pasos?</p>
+              <p className="rounded-xl bg-white/80 p-3 text-sm text-slate-700"><strong className="text-teal-900">3.</strong> ¿Las indicaciones y comentarios se entienden en el portal del paciente?</p>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* PESTAÑA 1: ASIGNACIÓN DE EJERCICIOS Y PROGRESO DE HOY */}
       {pestañaActiva === 'expediente' && (
