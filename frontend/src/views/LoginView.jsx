@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../config';
 
-export default function LoginView() {
+export default function LoginView({ darkMode, setDarkMode }) {
   const [identificacion, setIdentificacion] = useState("1");
   const [password, setPassword] = useState("123456");
   const [isDoctor, setIsDoctor] = useState(false);
@@ -39,7 +39,10 @@ export default function LoginView() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-teal-50 via-sky-50 to-blue-100 text-slate-800 flex items-center justify-center p-4 sm:p-6 font-sans">
+    <div className="min-h-screen w-full bg-gradient-to-br from-teal-50 via-sky-50 to-blue-100 text-slate-800 flex items-center justify-center p-4 sm:p-6 font-sans relative">
+      <button type="button" onClick={() => setDarkMode(!darkMode)} aria-pressed={darkMode} className={`absolute right-4 top-4 min-h-11 rounded-xl border px-4 py-2 text-sm font-bold shadow-sm transition ${darkMode ? 'border-slate-600 bg-slate-800 text-slate-100 hover:bg-slate-700' : 'border-teal-300 bg-white text-slate-800 hover:bg-teal-50'}`}>
+        {darkMode ? '☀️ Modo claro' : '🌙 Modo oscuro'}
+      </button>
       <div className="bg-white/95 border border-teal-100 p-6 sm:p-9 rounded-3xl shadow-xl max-w-md w-full space-y-6 text-center">
 
         <div className="space-y-2">

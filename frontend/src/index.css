@@ -8,6 +8,14 @@
   line-height: 1.5 !important;
 }
 
+.doctor-large-text [class*="text-xs"],
+.doctor-large-text [class*="text-sm"],
+.doctor-large-text [class*="text-[11px]"],
+.doctor-large-text [class*="text-[10px]"] {
+  font-size: 1rem !important;
+  line-height: 1.5 !important;
+}
+
 .patient-high-contrast {
   background-color: #e5e7eb !important;
 }
@@ -18,6 +26,14 @@
 .patient-high-contrast [class*="rounded-2xl"],
 .patient-high-contrast [class*="rounded-3xl"] {
   border-color: #334155 !important;
+}
+
+.doctor-high-contrast header,
+.doctor-high-contrast section,
+.doctor-high-contrast article,
+.doctor-high-contrast [class*="rounded-2xl"],
+.doctor-high-contrast [class*="rounded-3xl"] {
+  border-width: 2px !important;
 }
 
 .patient-portal button:focus-visible,
@@ -61,10 +77,13 @@
 .dark-app [class*="bg-teal-100/"],
 .dark-app [class~="bg-indigo-50"],
 .dark-app [class~="bg-indigo-100"],
+.dark-app [class*="bg-indigo-100/"],
 .dark-app [class~="bg-violet-50"],
 .dark-app [class~="bg-violet-100"],
+.dark-app [class*="bg-violet-100/"],
 .dark-app [class~="bg-fuchsia-50"],
 .dark-app [class~="bg-emerald-100"],
+.dark-app [class*="bg-emerald-100/"],
 .dark-app [class~="bg-emerald-50"],
 .dark-app [class~="bg-amber-50"],
 .dark-app [class*="bg-amber-50/"],
@@ -130,5 +149,10 @@
 }
 
 .dark-app .patient-high-contrast {
+  color-scheme: light;
+}
+
+.light-app {
+  min-height: 100vh;
   color-scheme: light;
 }

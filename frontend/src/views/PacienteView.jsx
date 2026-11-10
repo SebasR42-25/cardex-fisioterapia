@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { API_URL } from '../config';
 
-export default function PacienteView() {
+export default function PacienteView({ darkMode, setDarkMode }) {
   const { id } = useParams();
 
   const [paciente, setPaciente] = useState(null);
@@ -220,7 +220,8 @@ export default function PacienteView() {
           </Link>
         </div>
 
-        <div className="flex flex-wrap justify-end gap-2" aria-label="Opciones de accesibilidad">
+        <div className="flex flex-wrap justify-end gap-2" aria-label="Opciones de apariencia y accesibilidad">
+          <button type="button" aria-pressed={darkMode} onClick={() => setDarkMode(!darkMode)} className={`min-h-11 px-4 rounded-xl border font-bold transition ${darkMode ? 'border-slate-600 bg-slate-800 text-slate-100 hover:bg-slate-700' : 'border-teal-300 bg-white text-slate-800 hover:bg-teal-50'}`}>{darkMode ? '☀️ Modo claro' : '🌙 Modo oscuro'}</button>
           <button type="button" aria-pressed={textoGrande} onClick={() => setTextoGrande(value => !value)} className="min-h-11 px-4 rounded-xl bg-white border border-slate-300 text-slate-800 font-bold hover:bg-slate-100">A+ {textoGrande ? 'Letra normal' : 'Letra grande'}</button>
           <button type="button" aria-pressed={altoContraste} onClick={() => setAltoContraste(value => !value)} className="min-h-11 px-4 rounded-xl bg-slate-900 text-white border-2 border-slate-900 font-bold hover:bg-black">◐ {altoContraste ? 'Contraste normal' : 'Alto contraste'}</button>
         </div>

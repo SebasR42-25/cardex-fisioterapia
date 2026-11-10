@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ChatWidget from './components/ChatWidget';
 
@@ -20,16 +20,34 @@ function PrivateRoute({ children }) {
 }
 
 export default function App() {
+  const [darkMode, setDarkMode] = useState(() => {
+    try {
+      return localStorage.getItem('cardex_theme') !== 'light';
+    } catch {
+      return true;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('cardex_theme', darkMode ? 'dark' : 'light');
+    } catch {
+      // The selected theme still works for this session when storage is unavailable.
+    }
+  }, [darkMode]);
+
+  const sharedProps = { darkMode, setDarkMode };
+
   return (
     <Router>
-      <div className="dark-app relative min-h-screen bg-slate-950 text-slate-100">
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100 text-lg font-bold" role="status">Cargando el portal…</div>}>
+      <div className={`${darkMode ? 'dark-app bg-slate-950 text-slate-100' : 'light-app bg-teal-50 text-slate-800'} relative min-h-screen`}>
+        <Suspense fallback={<div className={`min-h-screen flex items-center justify-center text-lg font-bold ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-teal-50 text-slate-800'}`} role="status">Cargando el portal…</div>}>
           <Routes>
-            <Route path="/" element={<LoginView />} />
-            <Route path="/paciente/:id" element={<PacienteView />} />
+            <Route path="/" element={<LoginView {...sharedProps} />} />
+            <Route path="/paciente/:id" element={<PacienteView {...sharedProps} />} />
             <Route path="/doctor" element={
               <PrivateRoute>
-                <DoctorView />
+                <DoctorView {...sharedProps} />
               </PrivateRoute>
             } />
           </Routes>

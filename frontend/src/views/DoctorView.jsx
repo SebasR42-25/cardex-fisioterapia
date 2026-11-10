@@ -4,7 +4,29 @@ import { API_URL } from '../config';
 
 const DashboardChart = lazy(() => import('../components/DashboardChart'));
 
-export default function DoctorView() {
+function VideoThumbnail({ src, title }) {
+  return (
+    <div className="relative aspect-video overflow-hidden bg-slate-950">
+      <video
+        muted
+        autoPlay
+        playsInline
+        preload="metadata"
+        onLoadedData={event => event.currentTarget.pause()}
+        className="h-full w-full object-cover"
+        aria-hidden="true"
+      >
+        <source src={src} type="video/mp4" />
+      </video>
+      <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-gradient-to-t from-slate-950/40 to-transparent" aria-hidden="true">
+        <span className="grid h-12 w-12 place-items-center rounded-full border border-white/70 bg-slate-950/60 text-xl text-white shadow-lg">▶</span>
+        <span className="sr-only">Miniatura de {title}</span>
+      </span>
+    </div>
+  );
+}
+
+export default function DoctorView({ darkMode, setDarkMode }) {
   // Pestaña activa: 'expediente', 'evolucion', 'dashboard', 'catalogo'
   const [pestañaActiva, setPestañaActiva] = useState('expediente');
 
@@ -19,6 +41,8 @@ export default function DoctorView() {
   const [mostrarQrModal, setMostrarQrModal] = useState(false);
   const [notificacion, setNotificacion] = useState({ mensaje: '', tipo: '' }); // tipo: 'exito', 'error'
   const [rutinaGuardando, setRutinaGuardando] = useState(false);
+  const [textoGrande, setTextoGrande] = useState(false);
+  const [altoContraste, setAltoContraste] = useState(false);
 
   const mostrarNotificacion = (mensaje, tipo = 'exito') => {
     setNotificacion({ mensaje, tipo });
@@ -393,7 +417,7 @@ export default function DoctorView() {
   );
 
   return (
-    <div className="doctor-portal min-h-screen w-full bg-slate-50 text-slate-800 font-sans p-4 sm:p-6 md:p-10 pb-28">
+    <div className={`doctor-portal min-h-screen w-full bg-slate-50 text-slate-800 font-sans p-4 sm:p-6 md:p-10 pb-28 ${textoGrande ? 'doctor-large-text' : ''} ${altoContraste ? 'doctor-high-contrast' : ''}`}>
 
       {/* Notificación Flotante */}
       {notificacion.mensaje && (
@@ -430,6 +454,12 @@ export default function DoctorView() {
           </button>
         </div>
       </header>
+
+      <div className="mb-6 flex flex-wrap justify-end gap-2" aria-label="Opciones de apariencia y accesibilidad">
+        <button type="button" aria-pressed={darkMode} onClick={() => setDarkMode(!darkMode)} className={`min-h-11 rounded-xl border px-4 py-2 font-bold transition ${darkMode ? 'border-slate-600 bg-slate-800 text-slate-100 hover:bg-slate-700' : 'border-teal-300 bg-white text-slate-800 hover:bg-teal-50'}`}>{darkMode ? '☀️ Modo claro' : '🌙 Modo oscuro'}</button>
+        <button type="button" aria-pressed={textoGrande} onClick={() => setTextoGrande(value => !value)} className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 py-2 font-bold text-slate-800 transition hover:bg-slate-100">A+ {textoGrande ? 'Letra normal' : 'Letra grande'}</button>
+        <button type="button" aria-pressed={altoContraste} onClick={() => setAltoContraste(value => !value)} className="min-h-11 rounded-xl border-2 border-slate-900 bg-slate-900 px-4 py-2 font-bold text-white transition hover:bg-black">◐ {altoContraste ? 'Contraste normal' : 'Alto contraste'}</button>
+      </div>
 
       {/* ALERTA TEMPRANA 🚨 */}
       {hayAlertaUrgente && pestañaActiva === 'expediente' && (
@@ -784,12 +814,7 @@ export default function DoctorView() {
                   const frecuencia = frecuenciasOrtopedia[ejercicio.id] || ejercicio.frecuenciaSugerida || 'Según indicación profesional';
                   return (
                     <div key={ejercicio.id} className="overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white shadow-sm">
-                      <div className="aspect-video overflow-hidden rounded-2xl bg-slate-950">
-                        <video controls preload="metadata" className="h-full w-full rounded-2xl object-contain" aria-label={`Vista previa del video ${ejercicio.titulo}`}>
-                          <source src={ejercicio.url_video} type="video/mp4" />
-                          Tu navegador no puede reproducir este video.
-                        </video>
-                      </div>
+                      <VideoThumbnail src={ejercicio.url_video} title={ejercicio.titulo} />
                       <div className="space-y-3 p-4">
                         <div className="flex items-start justify-between gap-2">
                           <h4 className="font-extrabold text-slate-900">{ejercicio.titulo}</h4>
@@ -1371,15 +1396,18 @@ export default function DoctorView() {
 
             <div className="space-y-3 max-h-[460px] overflow-y-auto pr-2">
               {ejerciciosCatalogo.map((ex) => (
-                <div key={ex.id} className="bg-slate-100/90 border border-slate-300 p-4 rounded-2xl space-y-2">
-                  <div className="flex justify-between items-start">
-                    <h4 className="font-bold text-slate-800 text-base">{ex.titulo}</h4>
-                    <span className="text-xs bg-blue-950 text-blue-300 px-2.5 py-0.5 rounded-full font-bold">
-                      {ex.zona_cuerpo || "General"}
-                    </span>
+                <div key={ex.id} className="grid gap-4 rounded-2xl border border-slate-300 bg-slate-100/90 p-3 sm:grid-cols-[minmax(10rem,0.8fr)_1.2fr] sm:items-center">
+                  <VideoThumbnail src={ex.url_video} title={ex.titulo} />
+                  <div className="min-w-0 space-y-2">
+                    <div className="flex flex-wrap justify-between gap-2">
+                      <h4 className="font-bold text-slate-800 text-base">{ex.titulo}</h4>
+                      <span className="text-xs bg-blue-950 text-blue-300 px-2.5 py-0.5 rounded-full font-bold">
+                        {ex.zona_cuerpo || "General"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600">{ex.descripcion}</p>
+                    <span className="text-[11px] text-slate-500 font-mono block break-all">Video: {ex.url_video}</span>
                   </div>
-                  <p className="text-xs text-slate-600">{ex.descripcion}</p>
-                  <span className="text-[11px] text-slate-500 font-mono block">Video: {ex.url_video}</span>
                 </div>
               ))}
             </div>
