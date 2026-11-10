@@ -32,3 +32,103 @@
   outline: 3px solid #0f766e;
   outline-offset: 2px;
 }
+
+/* Keep legacy light utility classes readable inside the app's dark shell. */
+.dark-app {
+  min-height: 100vh;
+  color-scheme: dark;
+  background-color: #020617;
+  color: #e2e8f0;
+}
+
+.dark-app [class*="bg-gradient-to-"] {
+  background-image: linear-gradient(135deg, #0f172a, #111827) !important;
+}
+
+.dark-app [class~="bg-white"],
+.dark-app [class*="bg-white/"],
+.dark-app [class~="bg-slate-50"],
+.dark-app [class*="bg-slate-50/"],
+.dark-app [class~="bg-slate-100"],
+.dark-app [class*="bg-slate-100/"],
+.dark-app [class~="bg-blue-50"],
+.dark-app [class*="bg-blue-50/"],
+.dark-app [class~="bg-sky-50"],
+.dark-app [class*="bg-sky-50/"],
+.dark-app [class~="bg-teal-50"],
+.dark-app [class*="bg-teal-50/"],
+.dark-app [class~="bg-teal-100"],
+.dark-app [class*="bg-teal-100/"],
+.dark-app [class~="bg-indigo-50"],
+.dark-app [class~="bg-indigo-100"],
+.dark-app [class~="bg-violet-50"],
+.dark-app [class~="bg-violet-100"],
+.dark-app [class~="bg-fuchsia-50"],
+.dark-app [class~="bg-emerald-100"],
+.dark-app [class~="bg-emerald-50"],
+.dark-app [class~="bg-amber-50"],
+.dark-app [class*="bg-amber-50/"],
+.dark-app [class~="bg-red-50"],
+.dark-app [class*="bg-red-50/"] {
+  background-color: #111c2e !important;
+}
+
+.dark-app [class~="hover:bg-slate-50"]:hover,
+.dark-app [class~="hover:bg-slate-100"]:hover,
+.dark-app [class~="hover:bg-teal-50"]:hover,
+.dark-app [class~="hover:bg-indigo-50"]:hover,
+.dark-app [class~="hover:bg-violet-100"]:hover,
+.dark-app [class~="hover:bg-teal-200"]:hover {
+  background-color: #26364b !important;
+}
+
+.dark-app [class~="text-slate-950"],
+.dark-app [class~="text-slate-900"],
+.dark-app [class~="text-slate-800"],
+.dark-app [class~="text-slate-700"],
+.dark-app [class~="text-slate-600"],
+.dark-app [class~="text-slate-500"] {
+  color: #dbe5f1 !important;
+}
+
+.dark-app [class~="text-red-900"],
+.dark-app [class~="text-amber-900"],
+.dark-app [class~="text-amber-950"],
+.dark-app [class~="text-emerald-900"],
+.dark-app [class~="text-sky-900"],
+.dark-app [class~="text-teal-900"],
+.dark-app [class~="text-teal-950"],
+.dark-app [class~="text-violet-900"],
+.dark-app [class~="text-violet-950"],
+.dark-app [class~="text-fuchsia-900"] {
+  color: #e2e8f0 !important;
+}
+
+.dark-app input,
+.dark-app textarea,
+.dark-app select {
+  color-scheme: dark;
+  background-color: #0b1423;
+  color: #e2e8f0;
+  border-color: #475569;
+}
+
+.dark-app input::placeholder,
+.dark-app textarea::placeholder {
+  color: #94a3b8;
+}
+
+.dark-app [class~="border-slate-100"],
+.dark-app [class~="border-slate-200"],
+.dark-app [class~="border-slate-300"],
+.dark-app [class~="border-teal-100"],
+.dark-app [class~="border-teal-200"],
+.dark-app [class~="border-sky-100"],
+.dark-app [class~="border-indigo-200"],
+.dark-app [class~="border-violet-200"] {
+  border-color: #334155 !important;
+}
+
+.dark-app .patient-high-contrast {
+  color-scheme: light;
+}

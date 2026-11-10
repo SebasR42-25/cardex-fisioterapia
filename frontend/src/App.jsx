@@ -22,8 +22,8 @@ function PrivateRoute({ children }) {
 export default function App() {
   return (
     <Router>
-      <div className="relative min-h-screen bg-slate-950 text-slate-100">
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-blue-50 text-slate-800 text-lg font-bold" role="status">Cargando el portal…</div>}>
+      <div className="dark-app relative min-h-screen bg-slate-950 text-slate-100">
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100 text-lg font-bold" role="status">Cargando el portal…</div>}>
           <Routes>
             <Route path="/" element={<LoginView />} />
             <Route path="/paciente/:id" element={<PacienteView />} />

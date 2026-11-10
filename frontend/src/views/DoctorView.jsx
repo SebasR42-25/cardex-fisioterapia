@@ -783,9 +783,9 @@ export default function DoctorView() {
                 {videosOrtopedia.map(ejercicio => {
                   const frecuencia = frecuenciasOrtopedia[ejercicio.id] || ejercicio.frecuenciaSugerida || 'Según indicación profesional';
                   return (
-                    <div key={ejercicio.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white shadow-sm">
-                      <div className="aspect-video bg-slate-950">
-                        <video controls preload="metadata" className="h-full w-full object-contain" aria-label={`Vista previa del video ${ejercicio.titulo}`}>
+                    <div key={ejercicio.id} className="overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white shadow-sm">
+                      <div className="aspect-video overflow-hidden rounded-2xl bg-slate-950">
+                        <video controls preload="metadata" className="h-full w-full rounded-2xl object-contain" aria-label={`Vista previa del video ${ejercicio.titulo}`}>
                           <source src={ejercicio.url_video} type="video/mp4" />
                           Tu navegador no puede reproducir este video.
                         </video>
@@ -932,8 +932,8 @@ export default function DoctorView() {
                     {ejercicioSeleccionado.descripcion}
                   </p>
 
-                  <div className="rounded-xl overflow-hidden bg-slate-950 border border-slate-200">
-                    <video key={ejercicioSeleccionado.url_video} controls preload="metadata" className="w-full max-h-64 object-contain" aria-label={`Vista previa de ${ejercicioSeleccionado.titulo}`}>
+                  <div className="rounded-3xl overflow-hidden bg-slate-950 border border-slate-200">
+                    <video key={ejercicioSeleccionado.url_video} controls preload="metadata" className="w-full max-h-64 rounded-3xl object-contain" aria-label={`Vista previa de ${ejercicioSeleccionado.titulo}`}>
                       <source src={ejercicioSeleccionado.url_video} type="video/mp4" />
                       Tu navegador no puede reproducir este video.
                     </video>

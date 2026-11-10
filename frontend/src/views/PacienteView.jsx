@@ -300,8 +300,8 @@ export default function PacienteView() {
             </div>
 
             {/* Frame Amplio de Video */}
-            <div className="w-full bg-black rounded-3xl overflow-hidden shadow-2xl flex justify-center border border-teal-300">
-              <video key={videoActivo} controls autoPlay preload="metadata" onError={() => setVideoError(true)} onCanPlay={() => setVideoError(false)} className="w-full max-h-[550px] object-contain">
+            <div className="w-full bg-black rounded-[2rem] overflow-hidden shadow-2xl flex justify-center border border-teal-300">
+              <video key={videoActivo} controls autoPlay preload="metadata" onError={() => setVideoError(true)} onCanPlay={() => setVideoError(false)} className="w-full max-h-[550px] rounded-[2rem] object-contain">
                 <source src={videoActivo} type="video/mp4" onError={() => setVideoError(true)} />
                 Tu navegador no soporta la reproducción directa de este video.
               </video>
