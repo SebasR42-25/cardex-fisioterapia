@@ -18,7 +18,7 @@ function VideoThumbnail({ src, title }) {
       >
         <source src={src} type="video/mp4" />
       </video>
-      <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-gradient-to-t from-slate-950/40 to-transparent" aria-hidden="true">
+      <span className="video-thumbnail-shade pointer-events-none absolute inset-0 flex items-center justify-center bg-gradient-to-t from-slate-950/40 to-transparent" aria-hidden="true">
         <span className="grid h-12 w-12 place-items-center rounded-full border border-white/70 bg-slate-950/60 text-xl text-white shadow-lg">▶</span>
         <span className="sr-only">Miniatura de {title}</span>
       </span>
@@ -646,7 +646,7 @@ export default function DoctorView({ darkMode, setDarkMode }) {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setMostrarQrModal(true)}
-                className="bg-slate-700 hover:bg-slate-600 text-slate-800 text-xs font-bold px-3 py-2 rounded-xl border border-slate-600 transition cursor-pointer flex items-center gap-1.5"
+                className={`text-xs font-bold px-3 py-2 rounded-xl border transition cursor-pointer flex items-center gap-1.5 ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-white border-slate-500' : 'bg-teal-700 hover:bg-teal-800 text-white border-teal-800'}`}
                 title="Ver código QR de acceso para el paciente"
               >
                 📱 Ver QR
@@ -655,7 +655,7 @@ export default function DoctorView({ darkMode, setDarkMode }) {
                 href={`/paciente/${pacienteIdActivo}`}
                 target="_blank"
                 rel="noreferrer"
-                className="bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 text-xs font-bold px-3 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5"
+                className={`border text-xs font-bold px-3 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${darkMode ? 'bg-blue-600/30 hover:bg-blue-600/50 text-blue-100 border-blue-400/50' : 'bg-indigo-700 hover:bg-indigo-800 text-white border-indigo-800'}`}
               >
                 ↗ Abrir Vista Paciente
               </a>
@@ -677,9 +677,9 @@ export default function DoctorView({ darkMode, setDarkMode }) {
       {mostrarQrModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 animate-in fade-in">
           <div className="bg-white border border-slate-300 p-6 rounded-3xl max-w-sm w-full space-y-4 text-center">
-            <h3 className="text-lg font-bold text-slate-800">📱 Código QR del Paciente</h3>
-            <p className="text-xs text-slate-500">Escanea este código con la cámara del celular para abrir el portal de ejercicios del paciente #{pacienteIdActivo}:</p>
-            <div className="bg-white p-4 rounded-2xl flex justify-center shadow-inner">
+            <h3 className="text-lg font-bold text-slate-900">📱 Código QR del Paciente</h3>
+            <p className="text-sm text-slate-700">Escanea este código con la cámara del celular para abrir el portal de ejercicios del paciente #{pacienteIdActivo}:</p>
+            <div className="qr-image-frame bg-white p-4 rounded-2xl flex justify-center shadow-inner">
               <img
                 src={`${API_URL}/pacientes/${pacienteIdActivo}/qr?base_url=${encodeURIComponent(window.location.origin)}`}
                 alt="QR Paciente"
