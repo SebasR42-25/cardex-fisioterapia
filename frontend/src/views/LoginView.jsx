@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { API_URL } from '../config';
 
 export default function LoginView({ darkMode, setDarkMode }) {
-  const [identificacion, setIdentificacion] = useState("1");
+  const [searchParams] = useSearchParams();
+  const [identificacion, setIdentificacion] = useState(() => searchParams.get('perfil') === 'doctor' ? '123456789' : '1');
   const [password, setPassword] = useState("123456");
-  const [isDoctor, setIsDoctor] = useState(false);
+  const [isDoctor, setIsDoctor] = useState(() => searchParams.get('perfil') === 'doctor');
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();

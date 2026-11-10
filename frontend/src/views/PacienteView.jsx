@@ -213,7 +213,7 @@ export default function PacienteView({ darkMode, setDarkMode }) {
             <span>←</span> Volver al Inicio
           </Link>
           <Link
-            to="/doctor"
+            to="/?perfil=doctor"
             className="min-h-10 text-sm bg-teal-100/80 hover:bg-teal-200 border border-teal-300 text-teal-900 px-3 py-2 rounded-xl font-bold transition flex items-center gap-1"
           >
             <span>👩‍⚕️</span> Ir al Portal Médico
